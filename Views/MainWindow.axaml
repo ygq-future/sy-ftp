@@ -238,14 +238,22 @@
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightActive}" />
         </Style>
 
-        <!-- Flyout presenter: match inner Border so they merge into one visual layer -->
-        <Style Selector="FlyoutPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
-            <Setter Property="CornerRadius" Value="10" />
+        <!-- Flyout presenter: strip chrome via class selector -->
+        <Style Selector="FlyoutPresenter.path-overflow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="0" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="MinHeight" Value="0" />
             <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Background="{TemplateBinding Background}"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </ControlTemplate>
+            </Setter>
         </Style>
 
         <!-- Overflow flyout items: larger corner radius matching panel -->
@@ -659,7 +667,7 @@
                                                             <TextBlock Text="…" FontSize="12"
                                                                        Foreground="{DynamicResource SemiColorText1}" />
                                                             <Button.Flyout>
-                                                                <Flyout>
+                                                                <Flyout FlyoutPresenterClasses="path-overflow">
                                                                     <Border Background="{DynamicResource SemiColorBackground1}"
                                                                             CornerRadius="10" Padding="4"
                                                                             BorderBrush="{DynamicResource SemiColorBorder}"
