@@ -1,20 +1,644 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:sy_ftp.ViewModels"
+        xmlns:models="using:sy_ftp.Models"
+        xmlns:sys="using:System"
+        xmlns:pia="using:PhosphorIconsAvalonia.Markup"
+        xmlns:conv="using:sy_ftp.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="560"
         x:Class="sy_ftp.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
+        x:Name="RootWindow"
         Icon="/Assets/avalonia-logo.ico"
-        Title="sy_ftp">
+        Title="sy-ftp"
+        Topmost="{Binding IsTopmost}"
+        Width="900" Height="560"
+        MinWidth="680" MinHeight="440"
+        Background="{DynamicResource SemiColorBackground0}"
+        FontSize="13">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Window.Resources>
+        <conv:BoolInverter x:Key="BoolInverter" />
+        <conv:HexToBrushConverter x:Key="HexToBrush" />
+    </Window.Resources>
+
+    <Window.Styles>
+
+        <!-- ── Icon-only ToggleButton: suppress all checked/hover background ── -->
+        <Style Selector="ToggleButton.icon-toggle">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ToggleButton.icon-toggle /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ToggleButton.icon-toggle:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <Style Selector="ToggleButton.icon-toggle:checked /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ToggleButton.icon-toggle:checked:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <Style Selector="ToggleButton.icon-toggle:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill2}" />
+        </Style>
+
+        <!-- ── Accent-text button: foreground stays SemiColorPrimary in all states ── -->
+        <Style Selector="Button.accent-text">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorPrimary}" />
+        </Style>
+        <Style Selector="Button.accent-text /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorPrimary}" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.accent-text:pointerover /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorPrimaryPointerover}" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="Button.accent-text:pressed /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorPrimaryActive}" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightActive}" />
+        </Style>
+        <Style Selector="Button.accent-text:disabled /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorPrimaryDisabled}" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <!-- ── Window control buttons (min/max/close) ── -->
+        <Style Selector="Button.wnd-btn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText1}" />
+        </Style>
+        <Style Selector="Button.wnd-btn /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.wnd-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <Style Selector="Button.wnd-btn:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill2}" />
+        </Style>
+        <Style Selector="Button.wnd-close:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#C42B1C" />
+        </Style>
+        <Style Selector="Button.wnd-close:pointerover PathIcon">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.wnd-close:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#B0271A" />
+        </Style>
+
+        <!-- ── Host ListBoxItem: transparent in every state, selection shown on card ── -->
+        <Style Selector="ListBox.host-list ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="ListBox.host-list ListBoxItem /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.host-list ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.host-list ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.host-list ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.host-list ListBoxItem:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <!-- ── Host card: primary highlight when selected ── -->
+        <Style Selector="ListBox.host-list ListBoxItem Border.host-card">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="ListBox.host-list ListBoxItem:pointerover Border.host-card">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <Style Selector="ListBox.host-list ListBoxItem:selected Border.host-card">
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorPrimary}" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="ListBox.host-list ListBoxItem:selected:pointerover Border.host-card">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightPointerover}" />
+        </Style>
+
+        <!-- ── ComboBox dropdown: rounded popup + rounded items ── -->
+        <Style Selector="ComboBox#TagComboBox /template/ Popup > Border">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
+        </Style>
+        <Style Selector="ComboBox#TagComboBox ComboBoxItem">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="4,2" />
+            <Setter Property="Padding" Value="8,5" />
+        </Style>
+
+    </Window.Styles>
+
+    <!-- Root: title bar row + content rows -->
+    <Grid RowDefinitions="38,*,Auto">
+
+        <!-- ══════════════════════════════════════════
+             Custom Title Bar / Toolbar Row
+             ══════════════════════════════════════════ -->
+        <Grid Grid.Row="0"
+              Background="{DynamicResource SemiColorBackground1}"
+              ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+
+            <!-- Drag area covers the full row behind all children -->
+            <Border x:Name="TitleDragArea"
+                    Grid.Column="0" Grid.ColumnSpan="5"
+                    Background="Transparent"
+                    IsHitTestVisible="False" />
+
+            <!-- Left: Connect / Disconnect -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0">
+                <Button Command="{Binding ConnectCommand}"
+                        IsEnabled="{Binding IsNotConnected}"
+                        Classes="Primary"
+                        Padding="12,0" Height="28" CornerRadius="7"
+                        ToolTip.Tip="Connect to selected host">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <PathIcon Data="{pia:IconGeometry Icon=plug, IconType=fill}"
+                                  Width="14" Height="14" />
+                        <TextBlock Text="Connect" VerticalAlignment="Center"
+                                   FontSize="12" FontWeight="Medium" />
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding DisconnectCommand}"
+                        IsEnabled="{Binding IsConnected}"
+                        Classes="accent-text"
+                        Padding="10,0" Height="28" CornerRadius="7"
+                        ToolTip.Tip="Disconnect">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <PathIcon Data="{pia:IconGeometry Icon=x_circle, IconType=regular}"
+                                  Width="14" Height="14" />
+                        <TextBlock Text="Disconnect" VerticalAlignment="Center" FontSize="12" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- Separator -->
+            <Rectangle Grid.Column="1"
+                       Width="1" Margin="8,8"
+                       Fill="{DynamicResource SemiColorBorder}" />
+
+            <!-- Middle: file actions + drag area -->
+            <Grid Grid.Column="2" ColumnDefinitions="Auto,*">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="0,0,0,0">
+                    <Button Command="{Binding FileBrowser.RefreshCommand}"
+                            IsEnabled="{Binding IsConnected}"
+                            Classes="accent-text"
+                            Padding="10,0" Height="28" CornerRadius="7"
+                            ToolTip.Tip="Refresh file list">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <PathIcon Data="{pia:IconGeometry Icon=arrow_clockwise, IconType=regular}"
+                                      Width="14" Height="14" />
+                            <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="12" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Invisible drag region fills the rest of the middle column -->
+                <Border Grid.Column="1"
+                        Background="Transparent"
+                        PointerPressed="OnTitleBarPointerPressed" />
+            </Grid>
+
+            <!-- Right: theme / pin toggles -->
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="1" Margin="0,0,2,0">
+
+                <Button Command="{Binding ToggleThemeCommand}"
+                        Classes="accent-text"
+                        Padding="9,0" Height="32" CornerRadius="7"
+                        ToolTip.Tip="Toggle light / dark theme">
+                    <Panel>
+                        <PathIcon Data="{pia:IconGeometry Icon=sun, IconType=fill}"
+                                  Width="16" Height="16"
+                                  IsVisible="{Binding IsDarkMode}" />
+                        <PathIcon Data="{pia:IconGeometry Icon=moon, IconType=fill}"
+                                  Width="16" Height="16"
+                                  IsVisible="{Binding IsDarkMode, Converter={StaticResource BoolInverter}}" />
+                    </Panel>
+                </Button>
+
+                <ToggleButton IsChecked="{Binding IsTopmost}"
+                              Command="{Binding ToggleTopmostCommand}"
+                              Classes="icon-toggle"
+                              Padding="9,0" Height="32" CornerRadius="7"
+                              ToolTip.Tip="Always on top">
+                    <Panel>
+                        <PathIcon Data="{pia:IconGeometry Icon=push_pin_simple, IconType=fill}"
+                                  Width="16" Height="16"
+                                  Foreground="{DynamicResource SemiColorPrimary}"
+                                  IsVisible="{Binding IsTopmost}" />
+                        <PathIcon Data="{pia:IconGeometry Icon=push_pin_simple, IconType=regular}"
+                                  Width="16" Height="16"
+                                  Foreground="{DynamicResource SemiColorText2}"
+                                  IsVisible="{Binding IsTopmost, Converter={StaticResource BoolInverter}}" />
+                    </Panel>
+                </ToggleButton>
+
+            </StackPanel>
+
+            <!-- Window controls: minimize / maximize / close -->
+            <StackPanel Grid.Column="4" Orientation="Horizontal">
+                <Button Classes="wnd-btn"
+                        Click="OnMinimizeClick"
+                        ToolTip.Tip="Minimize">
+                    <PathIcon Data="{pia:IconGeometry Icon=minus, IconType=regular}"
+                              Width="12" Height="12" />
+                </Button>
+                <Button Classes="wnd-btn"
+                        Click="OnMaximizeClick"
+                        ToolTip.Tip="Maximize / Restore">
+                    <PathIcon Data="{pia:IconGeometry Icon=square, IconType=regular}"
+                              Width="11" Height="11" />
+                </Button>
+                <Button Classes="wnd-btn wnd-close"
+                        Click="OnCloseClick"
+                        ToolTip.Tip="Close">
+                    <PathIcon Data="{pia:IconGeometry Icon=x, IconType=regular}"
+                              Width="12" Height="12" />
+                </Button>
+            </StackPanel>
+
+        </Grid>
+
+        <!-- thin separator line below title bar -->
+        <Rectangle Grid.Row="0"
+                   Height="1" VerticalAlignment="Bottom"
+                   Fill="{DynamicResource SemiColorBorder}" />
+
+        <!-- ══════════════════════════════════════════
+             Main Content (sidebar | gap | browser)
+             8 swatches × (20 + 4) = 192 px content
+             + padding 10+10 + border 1+1 = 214 → use 220 px
+             ══════════════════════════════════════════ -->
+        <Grid Grid.Row="1" ColumnDefinitions="220,6,*" Margin="8,8,8,0">
+
+            <!-- ── Sidebar Card ── -->
+            <Border Grid.Column="0"
+                    CornerRadius="12"
+                    BoxShadow="0 2 8 0 #1A000000"
+                    Background="{DynamicResource SemiColorNavBackground}"
+                    BorderBrush="{DynamicResource SemiColorBorder}"
+                    BorderThickness="1">
+                <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" Padding="12,10"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Hosts"
+                                       FontWeight="SemiBold" FontSize="14"
+                                       Foreground="{DynamicResource SemiColorText0}"
+                                       VerticalAlignment="Center" />
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                <!-- Add: small text button in accent colour -->
+                                <Button Command="{Binding HostManager.AddHostCommand}"
+                                        Padding="8,3" CornerRadius="6"
+                                        FontSize="11" FontWeight="Medium"
+                                        Background="{DynamicResource SemiColorPrimaryLight}"
+                                        Foreground="{DynamicResource SemiColorPrimary}"
+                                        BorderThickness="0"
+                                        ToolTip.Tip="Add new host"
+                                        Content="+ Add" />
+                                <!-- Delete: small text button in danger colour -->
+                                <Button Command="{Binding HostManager.DeleteHostCommand}"
+                                        CommandParameter="{Binding HostManager.SelectedHost}"
+                                        Padding="8,3" CornerRadius="6"
+                                        FontSize="11" FontWeight="Medium"
+                                        Background="{DynamicResource SemiColorDangerLight}"
+                                        Foreground="{DynamicResource SemiColorDanger}"
+                                        BorderThickness="0"
+                                        ToolTip.Tip="Delete selected host"
+                                        Content="Delete" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Tag Filter -->
+                    <Border Grid.Row="1" Padding="8,7"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,0,0,1">
+                        <ComboBox x:Name="TagComboBox"
+                                  SelectedItem="{Binding HostManager.FilterTag, Mode=TwoWay}"
+                                  ItemsSource="{Binding HostManager.AllTagOptions}"
+                                  HorizontalAlignment="Stretch"
+                                  BorderThickness="1"
+                                  BorderBrush="{DynamicResource SemiColorBorder}"
+                                  Background="{DynamicResource SemiColorFill0}"
+                                  CornerRadius="8"
+                                  Padding="10,5">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="sys:String">
+                                    <TextBlock Text="{Binding}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Border>
+
+                    <!-- Host List -->
+                    <ListBox Grid.Row="2"
+                             x:Name="HostListBox"
+                             Classes="host-list"
+                             ItemsSource="{Binding HostManager.FilteredHosts}"
+                             SelectedItem="{Binding HostManager.SelectedHost, Mode=TwoWay}"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             Padding="6">
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Connect"
+                                          Command="{Binding ConnectCommand}"
+                                          IsEnabled="{Binding IsNotConnected}">
+                                    <MenuItem.Icon>
+                                        <PathIcon Data="{pia:IconGeometry Icon=plug, IconType=regular}"
+                                                  Width="14" Height="14" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Disconnect"
+                                          Command="{Binding DisconnectCommand}"
+                                          IsEnabled="{Binding IsConnected}">
+                                    <MenuItem.Icon>
+                                        <PathIcon Data="{pia:IconGeometry Icon=x_circle, IconType=regular}"
+                                                  Width="14" Height="14" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator />
+                                <MenuItem Header="Edit Host"
+                                          Command="{Binding HostManager.EditHostCommand}"
+                                          CommandParameter="{Binding HostManager.SelectedHost}">
+                                    <MenuItem.Icon>
+                                        <PathIcon Data="{pia:IconGeometry Icon=pencil_simple, IconType=regular}"
+                                                  Width="14" Height="14" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Delete Host"
+                                          Command="{Binding HostManager.DeleteHostCommand}"
+                                          CommandParameter="{Binding HostManager.SelectedHost}">
+                                    <MenuItem.Icon>
+                                        <PathIcon Data="{pia:IconGeometry Icon=trash_simple, IconType=regular}"
+                                                  Width="14" Height="14" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator />
+                                <MenuItem Header="Add New Host"
+                                          Command="{Binding HostManager.AddHostCommand}">
+                                    <MenuItem.Icon>
+                                        <PathIcon Data="{pia:IconGeometry Icon=plus_circle, IconType=regular}"
+                                                  Width="14" Height="14" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:FtpHost">
+                                <Border Classes="host-card"
+                                        Padding="10,9" Margin="0,0,0,3"
+                                        CornerRadius="8"
+                                        Background="{DynamicResource SemiColorFill0}"
+                                        BorderBrush="{DynamicResource SemiColorBorder}"
+                                        BorderThickness="1">
+                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                                                   Text="{Binding Name}"
+                                                   FontWeight="Medium" FontSize="13"
+                                                   Foreground="{DynamicResource SemiColorText0}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                                   Text="{Binding Host}"
+                                                   FontSize="11" Margin="0,2,0,0"
+                                                   Foreground="{DynamicResource SemiColorText2}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Border Grid.Row="1" Grid.Column="1"
+                                                IsVisible="{Binding Tags, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                Background="{DynamicResource SemiColorPrimaryLight}"
+                                                CornerRadius="4" Padding="5,2" Margin="6,2,0,0">
+                                            <TextBlock Text="{Binding Tags}" FontSize="9"
+                                                       Foreground="{DynamicResource SemiColorPrimary}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Accent colour swatches -->
+                    <Border Grid.Row="3" Padding="10,8"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Accent" FontSize="10"
+                                       Foreground="{DynamicResource SemiColorText3}"
+                                       HorizontalAlignment="Center" />
+                            <!--
+                                8 swatches, no trailing margin on last item.
+                                Centered via HorizontalAlignment on the StackPanel.
+                            -->
+                            <ItemsControl ItemsSource="{Binding AccentColors}"
+                                          HorizontalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <!-- Fixed 8-column grid: each cell = 24px, total = 192px, perfectly centered -->
+                                        <UniformGrid Rows="1" Columns="8" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:AccentColorOption"
+                                                  x:CompileBindings="False">
+                                        <Button Command="{Binding DataContext.SetAccentColorCommand, ElementName=RootWindow}"
+                                                CommandParameter="{Binding}"
+                                                Width="20" Height="20"
+                                                Padding="0" Margin="2"
+                                                CornerRadius="10"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="{Binding Hex, Converter={StaticResource HexToBrush}}"
+                                                BorderBrush="{DynamicResource SemiColorBorder}"
+                                                BorderThickness="1"
+                                                ToolTip.Tip="{Binding Name}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                </Grid>
+            </Border>
+
+            <!-- gap column — no splitter -->
+
+            <!-- ── File Browser Card ── -->
+            <Border Grid.Column="2"
+                    CornerRadius="12"
+                    BoxShadow="0 2 8 0 #1A000000"
+                    Background="{DynamicResource SemiColorBackground0}"
+                    BorderBrush="{DynamicResource SemiColorBorder}"
+                    BorderThickness="1">
+                <Grid RowDefinitions="Auto,*">
+
+                    <!-- Path breadcrumb -->
+                    <Border Grid.Row="0" Padding="12,9"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,0,0,1">
+                        <Border Background="{DynamicResource SemiColorFill0}"
+                                CornerRadius="8" Padding="10,6"
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <PathIcon Data="{pia:IconGeometry Icon=folder_simple, IconType=regular}"
+                                          Width="15" Height="15"
+                                          Foreground="{DynamicResource SemiColorText2}" />
+                                <TextBlock Text="{Binding FileBrowser.CurrentPath}"
+                                           FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText1}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </Border>
+
+                    <!-- File list area -->
+                    <Grid Grid.Row="1">
+
+                        <!-- Empty state -->
+                        <StackPanel IsVisible="{Binding IsNotConnected}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
+                            <PathIcon Data="{pia:IconGeometry Icon=cloud, IconType=regular}"
+                                      Width="52" Height="52"
+                                      Foreground="{DynamicResource SemiColorText3}" />
+                            <TextBlock Text="Select a host and click Connect"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource SemiColorText2}"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+
+                        <!-- Loading overlay -->
+                        <Border IsVisible="{Binding FileBrowser.IsLoading}"
+                                Background="{DynamicResource SemiColorOverlayBackground}"
+                                CornerRadius="0">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
+                                <ProgressBar IsIndeterminate="True" Width="200" Height="4" />
+                                <TextBlock Text="Loading directory…" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText2}"
+                                           HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- File list -->
+                        <ListBox ItemsSource="{Binding FileBrowser.Files}"
+                                 SelectedItem="{Binding FileBrowser.SelectedFile, Mode=TwoWay}"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 Margin="6">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:RemoteFile">
+                                    <Border Padding="12,6" Margin="0,0,0,2"
+                                            CornerRadius="6"
+                                            Background="Transparent">
+                                        <Grid ColumnDefinitions="Auto,*,90,140">
+                                            <PathIcon Grid.Column="0"
+                                                      Data="{pia:IconGeometry Icon=folder_simple, IconType=regular}"
+                                                      Width="18" Height="18" Margin="0,0,10,0"
+                                                      Foreground="{DynamicResource SemiColorPrimary}"
+                                                      IsVisible="{Binding IsDirectory}" />
+                                            <PathIcon Grid.Column="0"
+                                                      Data="{pia:IconGeometry Icon=file, IconType=regular}"
+                                                      Width="18" Height="18" Margin="0,0,10,0"
+                                                      Foreground="{DynamicResource SemiColorText2}"
+                                                      IsVisible="{Binding IsDirectory, Converter={StaticResource BoolInverter}}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                       FontSize="13" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SemiColorText0}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding Size, StringFormat='{}{0:N0} B'}"
+                                                       VerticalAlignment="Center" FontSize="11"
+                                                       Foreground="{DynamicResource SemiColorText2}"
+                                                       IsVisible="{Binding IsDirectory, Converter={StaticResource BoolInverter}}" />
+                                            <TextBlock Grid.Column="3"
+                                                       Text="{Binding LastModified, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                                       VerticalAlignment="Center" FontSize="11"
+                                                       Foreground="{DynamicResource SemiColorText3}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                    </Grid>
+                </Grid>
+            </Border>
+
+        </Grid>
+
+        <!-- ══════════════════════════════════════════
+             Status Bar
+             ══════════════════════════════════════════ -->
+        <Border Grid.Row="2"
+                CornerRadius="12"
+                BoxShadow="0 2 6 0 #14000000"
+                Background="{DynamicResource SemiColorBackground1}"
+                BorderBrush="{DynamicResource SemiColorBorder}"
+                BorderThickness="1"
+                Padding="14,5" Margin="8,6,8,8">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                <PathIcon Grid.Column="0"
+                          Data="{pia:IconGeometry Icon=circle, IconType=fill}"
+                          Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center"
+                          Foreground="{DynamicResource SemiColorDanger}"
+                          IsVisible="{Binding IsNotConnected}" />
+                <PathIcon Grid.Column="0"
+                          Data="{pia:IconGeometry Icon=circle, IconType=fill}"
+                          Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center"
+                          Foreground="{DynamicResource SemiColorSuccess}"
+                          IsVisible="{Binding IsConnected}" />
+                <TextBlock Grid.Column="1" Text="{Binding StatusText}"
+                           FontSize="12" Foreground="{DynamicResource SemiColorText1}"
+                           VerticalAlignment="Center" />
+                <ProgressBar Grid.Column="2"
+                             IsVisible="{Binding FileBrowser.IsLoading}"
+                             IsIndeterminate="True" Width="90" Height="4" Margin="10,0" />
+                <Separator Grid.Column="3" Width="1" Margin="10,3"
+                           Background="{DynamicResource SemiColorBorder}"
+                           IsVisible="{Binding IsConnected}" />
+                <TextBlock Grid.Column="4"
+                           Text="{Binding FileBrowser.Files.Count, StringFormat='{}{0} items'}"
+                           FontSize="11" Margin="0,0,2,0" VerticalAlignment="Center"
+                           Foreground="{DynamicResource SemiColorText3}"
+                           IsVisible="{Binding IsConnected}" />
+            </Grid>
+        </Border>
+
+    </Grid>
 
 </Window>

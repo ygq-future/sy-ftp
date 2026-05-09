@@ -1,15 +1,59 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:semi="https://irihi.tech/semi"
              x:Class="sy_ftp.App"
              xmlns:local="using:sy_ftp"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- Pure-black dark theme — unified surfaces, layered elements -->
+                <ResourceDictionary x:Key="Dark">
+                    <!-- Surfaces -->
+                    <SolidColorBrush x:Key="SemiColorBackground0">#000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorBackground1">#000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorBackground2">#000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorNavBackground">#000000</SolidColorBrush>
+                    <!-- Floating / fill elements -->
+                    <SolidColorBrush x:Key="SemiColorFill0">#151515</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorFill1">#222222</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorFill2">#2C2C2C</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorBorder">#262626</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorOverlayBackground">#CC000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDisabledFill">#181818</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDisabledBackground">#101010</SolidColorBrush>
+                    <!-- Primary accent (overridden at runtime by ApplyAccentColor) -->
+                    <SolidColorBrush x:Key="SemiColorPrimary">#7C8DFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorPrimaryPointerover">#9AA8FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorPrimaryActive">#5C6DF0</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorPrimaryDisabled">#4A4A6A</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorPrimaryLight">#1E2240</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorPrimaryLightPointerover">#262D52</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorPrimaryLightActive">#151A30</SolidColorBrush>
+                    <!-- Danger (red) semantic — dark variants -->
+                    <SolidColorBrush x:Key="SemiColorDanger">#FF6B6B</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDangerLight">#2A1010</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDangerLightPointerover">#361515</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDangerLightActive">#200C0C</SolidColorBrush>
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Light">
+                    <!-- Danger (red) semantic — light variants -->
+                    <SolidColorBrush x:Key="SemiColorDanger">#EF5350</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDangerLight">#FDECEA</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDangerLightPointerover">#FADADD</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDangerLightActive">#FEF2F1</SolidColorBrush>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
-        <FluentTheme />
+        <semi:SemiTheme />
     </Application.Styles>
 </Application>

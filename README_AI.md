@@ -1,70 +1,45 @@
-# 项目说明文档 (README_AI.md)
+# sy-ftp — 设计与实现参考（README_AI.md）
 
-**AI 指示：请在阅读此文档后，基于 Avalonia MVVM 模式和 C# 强类型规范进行代码生成和逻辑建议。**
+简短说明：本文件为开发者与 AI 合作时的指引，包含架构概览、UI 设计代{线}、编码规范与关键实现要点。遵循 Avalonia MVVM、CommunityToolkit.Mvvm 源代码生成与 Semi.Avalonia 主题体系。
 
-## 1. 项目概览
+## 项目概览
+- 名称：sy-ftp
+- 目标：跨平台、轻量、单窗口 FTP 客户端，专注远程文件管理与便捷远程编辑
+- 技术栈：.NET 10 / C# 13, Avalonia UI 12.x, Semi.Avalonia, PhosphorIconsAvalonia, FluentFTP, CommunityToolkit.Mvvm
 
-- **名称**: sy-ftp
-- **定位**: 跨平台（Windows/Linux/macOS）轻量级 FTP 客户端。
-- **核心理念**: 极致简洁、现代 UI、单窗口聚焦远程文件管理。
-- **技术栈**:
-  - 框架: Avalonia UI (MVVM 模式)
-  - 开发语言: C# 13 / .NET 10
-  - 关键库: FluentAvalonia (提供现代 Win11 风格控件), FluentFTP (底层协议处理)。
+## 快速实现要点（一目了然）
+- UI：卡片式（Toolbar / Sidebar / Content / StatusBar），全局 8px 间距，面板 CornerRadius=12，子卡片 CornerRadius=8
+- 主题：使用 SemiColor Token（禁止硬编码色值）；通过 Application.Current.RequestedThemeVariant 切换，偏好保存在 %LocalAppData%/sy-ftp/theme.json
+- 图标：使用 PhosphorIconsAvalonia（pia:IconGeometry）；目录用 folder_simple+SemiColorPrimary，文件用 file+SemiColorText2
+- 异步：所有网络/IO 使用 async/await，禁止阻塞 UI 线程
+- 编码风格：File-scoped namespace、简洁语法、使用 CommunityToolkit 源生成（[ObservableProperty]/[RelayCommand]）
 
-## 2. 功能清单 (Functional Requirements)
+## 关键模块
+- Models/: FtpHost, RemoteFile, AppConfig
+- ViewModels/: MainWindowViewModel, HostManagerViewModel, FileBrowserViewModel
+- Views/: XAML 布局（使用 Compiled Bindings）
+- Services/: FtpService (FluentFTP 封装), FileWatcherService (远程编辑自动上传)
+- Helpers/: DragDropHelper, Result
 
-### A. 主机管理
-- 支持 FTP 主机的新增、编辑、删除。
-- 分类系统: 支持为不同主机设置 Tag（标签），支持按标签筛选。
+## 核心功能流程（简要）
+- 连接流程：HostSelect → ConnectAsync → 加载根目录 → 更新状态栏
+- 远程编辑：RemotePath → 下载到 %TEMP%/sy-ftp → Process.Start 打开 → FileWatcher 监听变更 → 保存后自动上传 → 可选清理临时文件
+- 拖拽上传：解析拖拽路径（支持文件夹递归）、并行上传、展示进度
 
-### B. 远程文件浏览
-- 单窗口设计: 仅显示远程服务器的文件列表（List/Grid View）。
-- 支持目录深度导航。
-- 实时刷新远程目录状态。
+## UI 设计与约束（必须遵守）
+- 颜色：全部使用 {DynamicResource SemiColor*} Token
+- 圆角：所有 Border 必须显式 CornerRadius（最小 4px）
+- 卡片阴影：L1/L2/L3 层级（L2 用于主面板）
+- 按钮：使用 Classes 与 Theme（Primary/SolidButton 用于关键操作）
+- 图标：优先 regular 描边，按钮内可用 fill 强调
 
-### C. 文件传输逻辑
-- 上传: 支持从系统资源管理器直接拖拽 (Drag & Drop) 文件/文件夹至窗口进行上传。
-- 下载: 选中文件右键下载至本地。
+## 验证与运行
+- 杀进程（避免锁文件）：taskkill /F /IM sy-ftp.exe /T
+- 构建：dotnet build
+- 运行：dotnet run
 
-### D. 核心特性：远程编辑 (Hot Feature)
-1. 用户右键点击远程文件，选择"本地编辑"。
-2. **静默下载**: 自动下载该文件至系统临时目录（Temp Path）。
-3. **调用关联程序**: 使用系统默认编辑器打开该临时文件。
-4. **实时监控**: 监听临时文件的 FileSystemWatcher 事件。
-5. **自动同步**: 检测到保存行为后，自动将修改后的文件覆盖回远程 FTP。
+## 给 AI 的请求约束（简短）
+- 提交的代码必须使用 async/await，避免任何同步阻塞 IO
+- 不要改变设计 token 名称或引入新的 UI 库
+- 保持 ViewModels 轻量，复杂逻辑放入 Services
 
-### E. 交互与 UI
-- 窗口置顶: 提供开关，允许窗口固定在最上层。
-- 设计语言: 遵循 Fluent Design，简洁无多余元素。
-
-## 3. 技术实现架构 (Architectural Reference)
-
-### 项目结构
-
-| 路径 | 职责 |
-|------|------|
-| `Models/` | 包含 `FtpHost`, `RemoteFile`, `AppConfig` 等实体 |
-| `ViewModels/` | 核心逻辑控制器 |
-| `ViewModels/MainWindowViewModel` | 核心逻辑控制器 |
-| `ViewModels/HostManagerViewModel` | 处理主机增删改查 |
-| `ViewModels/FileBrowserViewModel` | 处理文件列表渲染与 FTP 指令 |
-| `Views/` | XAML 布局文件 |
-| `Services/` | 服务层 |
-| `Services/IFtpService` | 封装 FluentFTP 的异步操作 |
-| `Services/IFileWatcherService` | 负责监控临时文件修改 |
-
-### 关键逻辑片段 (AI 预设)
-
-- **拖拽实现**: 拦截 `DragDrop.DropEvent` 并解析 `DataObject`。
-- **置顶实现**: 绑定 `Window` 的 `Topmost` 属性。
-- **远程编辑逻辑流**:
-  ```
-  RemotePath -> LocalTempPath -> Process.Start -> Watcher_Changed -> FTP_Upload
-  ```
-
-## 4. AI 协助约束
-
-- **代码风格**: 优先使用 C# 最新语法的简洁写法（如 File-scoped namespaces, Primary constructors）。
-- **异步规范**: 所有的网络与 IO 操作必须使用 `async/await`，禁止阻塞 UI 线程。
-- **UI 响应式**: 列表加载需具备 Loading 状态。
