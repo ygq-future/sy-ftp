@@ -4,7 +4,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-11-8E44AD)](https://avaloniaui.net/)
-[![License](https://img.shields.io/badge/license-Apache-2.0-blue)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ## 特性
 
