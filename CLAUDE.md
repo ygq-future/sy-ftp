@@ -47,6 +47,12 @@ No test project exists yet.
 | `Helpers/DragDropHelper.cs` | Extracts local file paths from `DragEventArgs` |
 | `README_AI.md` | Exhaustive UI design system reference — Semi color tokens, icon mappings, elevation/radius system, card layout specs |
 
+## Workflow rules
+
+- **After every code change** (edit, write, etc.), build + run the app so the user can visually verify the result.
+- **CRITICAL: Stop after build + run.** Do NOT continue analyzing, brainstorming, speculating, or preparing the next change. Output a brief summary of what changed, then wait silently for the user's explicit confirmation or next instruction. Do not propose follow-up fixes or ask "should I also do X" — just stop and wait.
+- **Do NOT chain multiple speculative fixes** without user confirmation. After making a change, wait for the user to confirm whether the fix works before trying an alternative approach. Do not guess and switch solutions on your own — the user must validate each change first.
+
 ## UI constraints (from README_AI.md)
 
 - All `Border` elements must set explicit `CornerRadius` (min 4px, never 0).
