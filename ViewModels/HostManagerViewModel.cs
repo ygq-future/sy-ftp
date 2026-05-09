@@ -127,8 +127,15 @@ public partial class HostManagerViewModel : ViewModelBase
         if (host is null) return;
         try
         {
-            var lifetime = (Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)Avalonia.Application.Current!.ApplicationLifetime!;
-            var mainWindow = lifetime.MainWindow;
+            var lifetime = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var mainWindow = lifetime?.MainWindow;
+            if (mainWindow is null)
+            {
+                // UI unavailable in this context — keep selection and return
+                SelectedHost = host;
+                return;
+            }
+
             var dlg = new Views.HostEditWindow { DataContext = host };
             var result = await dlg.ShowDialog<bool?>(mainWindow);
             if (result == true)
