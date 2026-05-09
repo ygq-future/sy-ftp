@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init *)",
+      "Bash(dotnet add *)",
+      "Bash(dotnet build *)",
+      "WebSearch",
+      "Bash(dotnet list *)",
+      "Bash(dotnet remove *)",
+      "Bash(dotnet run *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(taskkill /F /IM sy-ftp.exe)",
+      "Bash(taskkill /F /IM sy-ftp.exe /T)",
+      "WebFetch(domain:semi.design)",
+      "Bash(powershell *)"
+    ]
+  }
+}
