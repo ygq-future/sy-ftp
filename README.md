@@ -4,7 +4,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Avalonia](https://img.shields.io/badge/Avalonia-11-8E44AD)](https://avaloniaui.net/)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache-2.0-blue)](LICENSE)
 
 ## 特性
 
@@ -58,4 +58,4 @@ sy-ftp/
 
 ## 许可
 
-MIT License
+Apache-2.0 License
