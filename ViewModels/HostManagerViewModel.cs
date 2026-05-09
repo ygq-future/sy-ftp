@@ -50,19 +50,16 @@ public partial class HostManagerViewModel : ViewModelBase
         // Wire up reactivity: whenever Hosts items change, refresh computed properties.
         _hosts.CollectionChanged += OnHostsCollectionChanged;
 
-        // ── Sample data for development / UI testing ──────────────────────────
-        var samples = new[]
+        // ── Sample host for testing ───────────────────────────────────────────
+        _hosts.Add(new FtpHost
         {
-            new FtpHost { Name = "Production Web",   Host = "ftp.example.com",    Port = 21,  Username = "webadmin",   Tags = "prod, web" },
-            new FtpHost { Name = "Staging Server",   Host = "staging.example.com",Port = 21,  Username = "deploy",     Tags = "staging" },
-            new FtpHost { Name = "Dev Box",          Host = "192.168.1.50",       Port = 2121,Username = "dev",        Tags = "dev, local" },
-            new FtpHost { Name = "Backup Store",     Host = "backup.internal",    Port = 21,  Username = "backup",     Tags = "prod, backup" },
-            new FtpHost { Name = "Media CDN",        Host = "media.cdn.example",  Port = 21,  Username = "media",      Tags = "prod" },
-            new FtpHost { Name = "Anonymous Mirror", Host = "mirror.opensrc.org", Port = 21,  Username = "anonymous",  Tags = "" },
-        };
-
-        foreach (var h in samples)
-            _hosts.Add(h);
+            Name = "wsl",
+            Host = "172.23.30.234",
+            Port = 22,
+            Username = "sheepyu",
+            Password = "2003",
+            Tags = "test"
+        });
     }
 
     // ── Collection-change handler ─────────────────────────────────────────────
@@ -114,11 +111,26 @@ public partial class HostManagerViewModel : ViewModelBase
     // ── Commands ──────────────────────────────────────────────────────────────
 
     [RelayCommand]
-    private void AddHost()
+    private async Task AddHost()
     {
-        var host = new FtpHost { Name = "New Host" };
-        Hosts.Add(host);
-        SelectedHost = host;
+        try
+        {
+            var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+                as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var mainWindow = lifetime?.MainWindow;
+            if (mainWindow is null) return;
+
+            var host = new FtpHost();
+            var dlg = new Views.HostEditWindow { DataContext = host, Title = "Add Host" };
+            var result = await dlg.ShowDialog<bool?>(mainWindow);
+            if (result == true)
+            {
+                Hosts.Add(host);
+                SelectedHost = host;
+                RefreshDerivedProperties();
+            }
+        }
+        catch { }
     }
 
     [RelayCommand]
@@ -127,30 +139,33 @@ public partial class HostManagerViewModel : ViewModelBase
         if (host is null) return;
         try
         {
-            var lifetime = Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+                as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
             var mainWindow = lifetime?.MainWindow;
             if (mainWindow is null)
             {
-                // UI unavailable in this context — keep selection and return
                 SelectedHost = host;
                 return;
             }
 
-            var dlg = new Views.HostEditWindow { DataContext = host };
+            // Work on a clone so Cancel truly reverts changes
+            var clone = host.Clone();
+            var dlg = new Views.HostEditWindow { DataContext = clone, Title = "Edit Host" };
             var result = await dlg.ShowDialog<bool?>(mainWindow);
             if (result == true)
             {
+                host.Name = clone.Name;
+                host.Host = clone.Host;
+                host.Port = clone.Port;
+                host.Username = clone.Username;
+                host.Password = clone.Password;
+                host.Tags = clone.Tags;
                 RefreshDerivedProperties();
             }
-            else
-            {
-                // still select host so details show
-                SelectedHost = host;
-            }
+            SelectedHost = host;
         }
         catch
         {
-            // Fallback: select host if UI dialog cannot be shown
             SelectedHost = host;
         }
     }

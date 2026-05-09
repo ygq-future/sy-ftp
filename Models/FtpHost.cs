@@ -13,7 +13,7 @@ public partial class FtpHost : ObservableObject
     private string _host = string.Empty;
 
     [ObservableProperty]
-    private int _port = 21;
+    private int _port = 22;
 
     [ObservableProperty]
     private string _username = "anonymous";
@@ -27,4 +27,14 @@ public partial class FtpHost : ObservableObject
     public string[] TagList => string.IsNullOrWhiteSpace(Tags)
         ? []
         : Tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+    public FtpHost Clone() => new()
+    {
+        Name = Name,
+        Host = Host,
+        Port = Port,
+        Username = Username,
+        Password = Password,
+        Tags = Tags
+    };
 }
