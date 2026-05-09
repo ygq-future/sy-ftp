@@ -1,0 +1,135 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="using:sy_ftp.Models"
+        xmlns:pia="using:PhosphorIconsAvalonia.Markup"
+        x:Class="sy_ftp.Views.HostEditWindow"
+        x:DataType="models:FtpHost"
+        Width="400" Height="480"
+        Title="Host"
+        WindowDecorations="None"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="Transparent">
+
+    <Design.DataContext>
+        <models:FtpHost Name="My Server" Host="ftp.example.com"/>
+    </Design.DataContext>
+
+    <!-- Margin gives the BoxShadow room to render beyond the card -->
+    <Border x:Name="CardBorder"
+            CornerRadius="12" Margin="8" Padding="24"
+            Background="{DynamicResource SemiColorBackground1}"
+            BorderBrush="{DynamicResource SemiColorBorder}"
+            BorderThickness="1"
+            PointerPressed="OnCardDrag">
+        <Grid RowDefinitions="Auto,*,Auto">
+
+            <!-- Header — drag area -->
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,16">
+                <PathIcon Data="{pia:IconGeometry Icon=desktop, IconType=regular}"
+                          Width="22" Height="22"
+                          Foreground="{DynamicResource SemiColorPrimary}" />
+                <TextBlock Text="Host" FontSize="18" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SemiColorText0}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Form -->
+            <StackPanel Grid.Row="1" Spacing="10">
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Name" FontSize="12"
+                               Foreground="{DynamicResource SemiColorText2}" />
+                    <TextBox Text="{Binding Name, Mode=TwoWay}"
+                             PlaceholderText="My FTP Server"
+                             Background="{DynamicResource SemiColorFill0}"
+                             BorderBrush="{DynamicResource SemiColorBorder}"
+                             CornerRadius="6" Padding="10,7" />
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Host" FontSize="12"
+                               Foreground="{DynamicResource SemiColorText2}" />
+                    <TextBox Text="{Binding Host, Mode=TwoWay}"
+                             PlaceholderText="ftp.example.com"
+                             Background="{DynamicResource SemiColorFill0}"
+                             BorderBrush="{DynamicResource SemiColorBorder}"
+                             CornerRadius="6" Padding="10,7" />
+                </StackPanel>
+
+                <Grid ColumnDefinitions="100,*,*">
+                    <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
+                        <TextBlock Text="Port" FontSize="12"
+                                   Foreground="{DynamicResource SemiColorText2}" />
+                        <TextBox Text="{Binding Port, Mode=TwoWay}"
+                                 Background="{DynamicResource SemiColorFill0}"
+                                 BorderBrush="{DynamicResource SemiColorBorder}"
+                                 CornerRadius="6" Padding="10,7" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Grid.ColumnSpan="2" Spacing="4">
+                        <TextBlock Text="Username" FontSize="12"
+                                   Foreground="{DynamicResource SemiColorText2}" />
+                        <TextBox Text="{Binding Username, Mode=TwoWay}"
+                                 PlaceholderText="anonymous"
+                                 Background="{DynamicResource SemiColorFill0}"
+                                 BorderBrush="{DynamicResource SemiColorBorder}"
+                                 CornerRadius="6" Padding="10,7" />
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Password" FontSize="12"
+                               Foreground="{DynamicResource SemiColorText2}" />
+                    <TextBox Text="{Binding Password, Mode=TwoWay}"
+                             PasswordChar="&#x2022;"
+                             PlaceholderText="Enter password"
+                             Background="{DynamicResource SemiColorFill0}"
+                             BorderBrush="{DynamicResource SemiColorBorder}"
+                             CornerRadius="6" Padding="10,7" />
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Tags" FontSize="12"
+                               Foreground="{DynamicResource SemiColorText2}" />
+                    <TextBox Text="{Binding Tags, Mode=TwoWay}"
+                             PlaceholderText="prod, web"
+                             Background="{DynamicResource SemiColorFill0}"
+                             BorderBrush="{DynamicResource SemiColorBorder}"
+                             CornerRadius="6" Padding="10,7" />
+                </StackPanel>
+
+                <!-- Inline validation error -->
+                <Border x:Name="ErrorBorder"
+                        IsVisible="False"
+                        Background="{DynamicResource SemiColorDangerLight}"
+                        CornerRadius="6" Padding="10,7">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <PathIcon Data="{pia:IconGeometry Icon=warning_circle, IconType=regular}"
+                                  Width="14" Height="14"
+                                  Foreground="{DynamicResource SemiColorDanger}" />
+                        <TextBlock x:Name="ErrorText"
+                                   Foreground="{DynamicResource SemiColorDanger}"
+                                   FontSize="12" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                        HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+                <Button Content="Cancel" Click="Cancel_Click"
+                        Background="Transparent"
+                        BorderBrush="{DynamicResource SemiColorPrimary}"
+                        Foreground="{DynamicResource SemiColorPrimary}"
+                        BorderThickness="1"
+                        CornerRadius="6" Padding="12,6" />
+                <Button Content="Save" Click="Ok_Click"
+                        Background="{DynamicResource SemiColorPrimary}"
+                        Foreground="White"
+                        BorderThickness="0"
+                        CornerRadius="6" Padding="12,6" />
+            </StackPanel>
+
+        </Grid>
+    </Border>
+</Window>

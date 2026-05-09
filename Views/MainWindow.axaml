@@ -146,16 +146,69 @@
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightPointerover}" />
         </Style>
 
+        <!-- ── Connect button (primary accent) ── -->
+        <Style Selector="Button.connect-primary">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimary}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="Button.connect-primary:disabled">
+            <Setter Property="Background" Value="{DynamicResource SemiColorDisabledFill}" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText3}" />
+        </Style>
+
         <!-- ── ComboBox dropdown: rounded popup + rounded items ── -->
-        <Style Selector="ComboBox#TagComboBox /template/ Popup > Border">
+        <Style Selector="ComboBox#TagComboBox /template/ Popup Border">
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Margin" Value="0,4,0,0" />
             <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
         </Style>
         <Style Selector="ComboBox#TagComboBox ComboBoxItem">
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Margin" Value="4,2" />
             <Setter Property="Padding" Value="8,5" />
+        </Style>
+        <Style Selector="ComboBox#TagComboBox ComboBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimary}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="ComboBox#TagComboBox ComboBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+
+        <!-- ── Context menu ── -->
+        <Style Selector="ContextMenu /template/ Popup Border">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
+        </Style>
+        <Style Selector="ContextMenu">
+            <Setter Property="Padding" Value="4" />
+        </Style>
+        <Style Selector="ContextMenu Separator">
+            <Setter Property="Margin" Value="8,4" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorBorder}" />
+        </Style>
+        <Style Selector="ContextMenu MenuItem">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="8,4" />
+        </Style>
+        <Style Selector="ContextMenu MenuItem PathIcon">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+        </Style>
+        <Style Selector="ContextMenu MenuItem:selected /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+        <Style Selector="ContextMenu MenuItem:pointerover /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+            <Setter Property="CornerRadius" Value="6" />
         </Style>
 
     </Window.Styles>
@@ -180,7 +233,7 @@
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0">
                 <Button Command="{Binding ConnectCommand}"
                         IsEnabled="{Binding IsNotConnected}"
-                        Classes="Primary"
+                        Classes="connect-primary"
                         Padding="12,0" Height="28" CornerRadius="7"
                         ToolTip.Tip="Connect to selected host">
                     <StackPanel Orientation="Horizontal" Spacing="6">
@@ -377,7 +430,7 @@
                              Background="Transparent"
                              Padding="6">
                         <ListBox.ContextMenu>
-                            <ContextMenu>
+                            <ContextMenu Background="{DynamicResource SemiColorNavBackground}">
                                 <MenuItem Header="Connect"
                                           Command="{Binding ConnectCommand}"
                                           IsEnabled="{Binding IsNotConnected}">
