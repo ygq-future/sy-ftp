@@ -285,7 +285,7 @@ public partial class FileBrowserViewModel : ViewModelBase
         IsLoading = true;
         try
         {
-            var tempDir = Path.Combine(Path.GetTempPath(), "sy-ftp");
+            var tempDir = Path.Combine(Path.GetTempPath(), "SY-FTP");
             Directory.CreateDirectory(tempDir);
             var tempPath = Path.Combine(tempDir, file.Name);
 

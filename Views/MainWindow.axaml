@@ -12,7 +12,7 @@
         x:DataType="vm:MainWindowViewModel"
         x:Name="RootWindow"
         Icon="/Assets/avalonia-logo.ico"
-        Title="sy-ftp"
+        Title="SY-FTP"
         Topmost="{Binding IsTopmost}"
         Width="900" Height="560"
         MinWidth="680" MinHeight="440"

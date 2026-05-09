@@ -1,4 +1,4 @@
-# sy-ftp
+# SY-FTP
 
 > 跨平台轻量级 FTP 客户端 — 极致简洁，聚焦远程文件管理。
 
@@ -48,7 +48,7 @@ dotnet run
 ## 项目结构
 
 ```
-sy-ftp/
+SY-FTP/
 ├── Models/          # 数据实体 (FtpHost, RemoteFile, AppConfig)
 ├── ViewModels/      # MVVM 视图模型
 ├── Views/           # XAML 布局

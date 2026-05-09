@@ -16,7 +16,7 @@ namespace sy_ftp;
 public partial class App : Application
 {
     private static readonly string ThemeFile = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sy-ftp", "theme.json");
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SY-FTP", "theme.json");
 
     public override void Initialize()
     {
@@ -76,7 +76,7 @@ public partial class App : Application
     }
 
     private static readonly string AccentFile = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sy-ftp", "accent.json");
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SY-FTP", "accent.json");
 
     public static string LoadAccentColor()
     {

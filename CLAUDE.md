@@ -28,7 +28,7 @@ No test project exists yet.
 
 **FTP layer**: `FtpService : IFtpService` wraps `AsyncFtpClient` from FluentFTP. `FileWatcherService` wraps `FileSystemWatcher` with a 500ms debounce mechanism for the remote-edit feature (download → watch temp file → re-upload on save).
 
-**Theme**: Semi.Avalonia via `<semi:SemiTheme />` in App.axaml. Light/dark preference persisted to `%LocalAppData%/sy-ftp/theme.json`. All colors must use `{DynamicResource SemiColor*}` tokens — never hardcode colors.
+**Theme**: Semi.Avalonia via `<semi:SemiTheme />` in App.axaml. Light/dark preference persisted to `%LocalAppData%/SY-FTP/theme.json`. All colors must use `{DynamicResource SemiColor*}` tokens — never hardcode colors.
 
 **Compiled bindings**: `AvaloniaUseCompiledBindingsByDefault` is enabled. Views declare `x:DataType` for compile-time binding verification.
 
