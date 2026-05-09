@@ -3,8 +3,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using sy_ftp.ViewModels;
 
@@ -27,6 +29,26 @@ public partial class MainWindow : Window
     {
         HostListBox.DoubleTapped += OnHostDoubleTapped;
         WirePopupBackgrounds();
+
+        PathScrollViewer.LayoutUpdated += OnPathLayoutUpdated;
+    }
+
+    private bool _pendingOverflowCheck;
+    private void OnPathLayoutUpdated(object? sender, EventArgs e)
+    {
+        if (_pendingOverflowCheck) return;
+        if (DataContext is not MainWindowViewModel vm) return;
+        // Once collapsed, stay collapsed until path changes resets it
+        if (vm.FileBrowser.IsPathOverflowing) return;
+        _pendingOverflowCheck = true;
+        Dispatcher.Post(() =>
+        {
+            _pendingOverflowCheck = false;
+            if (DataContext is not MainWindowViewModel vm) return;
+            if (vm.FileBrowser.IsPathOverflowing) return;
+            if (PathScrollViewer.Extent.Width > PathScrollViewer.Viewport.Width + 0.5)
+                vm.FileBrowser.IsPathOverflowing = true;
+        }, DispatcherPriority.Background);
     }
 
     private void WirePopupBackgrounds()
@@ -77,6 +99,60 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnFileListDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+        if (vm.FileBrowser.SelectedFile is not { IsDirectory: true } dir) return;
+        vm.FileBrowser.NavigateCommand.Execute(dir);
+    }
+
+    private void OnPathBarDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm && vm.IsConnected)
+        {
+            EnterPathEdit(vm);
+            e.Handled = true;
+        }
+    }
+
+    private void OnEditPathClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            EnterPathEdit(vm);
+    }
+
+    private void EnterPathEdit(MainWindowViewModel vm)
+    {
+        vm.FileBrowser.StartPathEditCommand.Execute(null);
+        PathEditBox.Focus();
+        PathEditBox.CaretIndex = PathEditBox.Text?.Length ?? 0;
+    }
+
+    private void OnAnywhereDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+        if (!vm.FileBrowser.IsEditingPath) return;
+        if (e.Source is TextBox) return;
+        vm.FileBrowser.CancelPathEditCommand.Execute(null);
+    }
+
+    private void OnPathEditKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        switch (e.Key)
+        {
+            case Key.Enter:
+                e.Handled = true;
+                vm.FileBrowser.NavigateToEditPathCommand.Execute(null);
+                break;
+            case Key.Escape:
+                e.Handled = true;
+                vm.FileBrowser.CancelPathEditCommand.Execute(null);
+                break;
+        }
+    }
+
     private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
@@ -93,4 +169,17 @@ public partial class MainWindow : Window
 
     private void OnCloseClick(object? sender, RoutedEventArgs e)
         => Close();
+
+    private async void OnCopyPathClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel?.Clipboard is { } clipboard)
+            {
+                await clipboard.SetTextAsync(vm.FileBrowser.CurrentPath);
+                vm.FileBrowser.ShowCopyToast = true;
+            }
+        }
+    }
 }

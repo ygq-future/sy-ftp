@@ -26,6 +26,8 @@
     <Window.Resources>
         <conv:BoolInverter x:Key="BoolInverter" />
         <conv:HexToBrushConverter x:Key="HexToBrush" />
+        <conv:FileSizeConverter x:Key="FileSizeConverter" />
+        <conv:NotNullOrEmptyConverter x:Key="NotNullOrEmptyConverter" />
     </Window.Resources>
 
     <Window.Styles>
@@ -211,10 +213,68 @@
             <Setter Property="CornerRadius" Value="6" />
         </Style>
 
+        <!-- ── File ListBoxItem: accent hover & selection ── -->
+        <Style Selector="ListBox.file-list ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightPointerover}" />
+        </Style>
+        <Style Selector="ListBox.file-list ListBoxItem:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightActive}" />
+        </Style>
+
+        <!-- Flyout presenter: transparent so inner content controls appearance -->
+        <Style Selector="FlyoutPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+        </Style>
+
+        <!-- Overflow flyout items: larger corner radius matching panel -->
+        <Style Selector="Button.overflow-item">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+
+        <!-- Overflow flyout: accent hover, rounded, compact -->
+        <Style Selector="ListBox.overflow-flyout ListBoxItem">
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+        <Style Selector="ListBox.overflow-flyout ListBoxItem /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+        <Style Selector="ListBox.overflow-flyout ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="ListBox.overflow-flyout ListBoxItem:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightActive}" />
+        </Style>
+
     </Window.Styles>
 
     <!-- Root: title bar row + content rows -->
-    <Grid RowDefinitions="38,*,Auto">
+    <Grid RowDefinitions="38,*,Auto"
+          DoubleTapped="OnAnywhereDoubleTapped">
 
         <!-- ══════════════════════════════════════════
              Custom Title Bar / Toolbar Row
@@ -559,7 +619,7 @@
                     Background="{DynamicResource SemiColorBackground0}"
                     BorderBrush="{DynamicResource SemiColorBorder}"
                     BorderThickness="1">
-                <Grid RowDefinitions="Auto,*">
+                <Grid RowDefinitions="Auto,Auto,*">
 
                     <!-- Path breadcrumb -->
                     <Border Grid.Row="0" Padding="12,9"
@@ -567,21 +627,215 @@
                             BorderThickness="0,0,0,1">
                         <Border Background="{DynamicResource SemiColorFill0}"
                                 CornerRadius="8" Padding="10,6"
-                                VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <PathIcon Data="{pia:IconGeometry Icon=folder_simple, IconType=regular}"
-                                          Width="15" Height="15"
-                                          Foreground="{DynamicResource SemiColorText2}" />
-                                <TextBlock Text="{Binding FileBrowser.CurrentPath}"
-                                           FontFamily="Consolas" FontSize="12"
-                                           Foreground="{DynamicResource SemiColorText1}"
+                                VerticalAlignment="Center"
+                                IsEnabled="{Binding IsConnected}"
+                                DoubleTapped="OnPathBarDoubleTapped">
+                            <StackPanel Spacing="4">
+                                <!-- Normal path display -->
+                                <Grid IsVisible="{Binding FileBrowser.IsEditingPath, Converter={StaticResource BoolInverter}}"
+                                      ColumnDefinitions="*,Auto">
+                                    <ScrollViewer Grid.Column="0"
+                                                  x:Name="PathScrollViewer"
+                                                  HorizontalScrollBarVisibility="Hidden"
+                                                  VerticalScrollBarVisibility="Disabled">
+                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                            <PathIcon Data="{pia:IconGeometry Icon=folder_simple, IconType=regular}"
+                                                      Width="15" Height="15" Margin="0,0,6,0"
+                                                      Foreground="{DynamicResource SemiColorText2}"
+                                                      VerticalAlignment="Center" />
+                                            <ItemsControl ItemsSource="{Binding FileBrowser.PathSegments}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal" Spacing="2" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="models:PathSegment">
+                                                    <StackPanel Orientation="Horizontal" Spacing="2">
+                                                        <!-- Overflow collapse button -->
+                                                        <Button Classes="accent-text" Padding="3,1"
+                                                                IsVisible="{Binding IsOverflow}">
+                                                            <TextBlock Text="…" FontSize="12"
+                                                                       Foreground="{DynamicResource SemiColorText1}" />
+                                                            <Button.Flyout>
+                                                                <Flyout>
+                                                                    <Border Background="{DynamicResource SemiColorBackground1}"
+                                                                            CornerRadius="10" Padding="4"
+                                                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                                                            BorderThickness="1">
+                                                                        <ItemsControl ItemsSource="{Binding DataContext.FileBrowser.OverflowPathSegments, ElementName=RootWindow}">
+                                                                            <ItemsControl.ItemsPanel>
+                                                                                <ItemsPanelTemplate>
+                                                                                    <StackPanel Spacing="1" />
+                                                                                </ItemsPanelTemplate>
+                                                                            </ItemsControl.ItemsPanel>
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate x:DataType="models:PathSegment">
+                                                                                    <Border CornerRadius="8" ClipToBounds="True">
+                                                                                        <Button Classes="accent-text overflow-item" Padding="8,2"
+                                                                                                HorizontalAlignment="Stretch"
+                                                                                                Command="{Binding DataContext.FileBrowser.NavigateToPathCommand, ElementName=RootWindow}"
+                                                                                                CommandParameter="{Binding FullPath}">
+                                                                                            <TextBlock Text="{Binding Name}"
+                                                                                                       FontSize="12"
+                                                                                                       Foreground="{DynamicResource SemiColorText1}" />
+                                                                                        </Button>
+                                                                                    </Border>
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+                                                                    </Border>
+                                                                </Flyout>
+                                                            </Button.Flyout>
+                                                        </Button>
+                                                        <TextBlock Text="/" FontSize="12"
+                                                                   Foreground="{DynamicResource SemiColorText3}"
+                                                                   IsVisible="{Binding IsOverflow}"
+                                                                   VerticalAlignment="Center" />
+                                                        <!-- Normal segment (hidden when overflow) -->
+                                                        <StackPanel IsVisible="{Binding IsOverflow, Converter={StaticResource BoolInverter}}"
+                                                                    Orientation="Horizontal" Spacing="2">
+                                                            <Button Classes="accent-text" Padding="2,1"
+                                                                    Command="{Binding DataContext.FileBrowser.NavigateToPathCommand, ElementName=RootWindow}"
+                                                                    CommandParameter="{Binding FullPath}"
+                                                                    IsVisible="{Binding IsLast, Converter={StaticResource BoolInverter}}">
+                                                                <TextBlock Text="{Binding Name}"
+                                                                           FontSize="12"
+                                                                           Foreground="{DynamicResource SemiColorText1}" />
+                                                            </Button>
+                                                            <TextBlock Text="{Binding Name}"
+                                                                       FontSize="12"
+                                                                       Foreground="{DynamicResource SemiColorText0}"
+                                                                       FontWeight="SemiBold"
+                                                                       IsVisible="{Binding IsLast}"
+                                                                       VerticalAlignment="Center" />
+                                                            <TextBlock Text="/" FontSize="12"
+                                                                       Foreground="{DynamicResource SemiColorText3}"
+                                                                       IsVisible="{Binding ShowSeparator}"
+                                                                       VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                    <!-- Buttons always visible on right -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" Margin="8,0,0,0">
+                                        <Button Classes="accent-text" Padding="4,2"
+                                                Click="OnEditPathClick">
+                                            <PathIcon Data="{pia:IconGeometry Icon=pencil_simple, IconType=regular}"
+                                                      Width="13" Height="13"
+                                                      Foreground="{DynamicResource SemiColorText3}" />
+                                        </Button>
+                                        <Button Classes="accent-text" Padding="4,2"
+                                                Click="OnCopyPathClick"
+                                                ToolTip.Tip="Copy path">
+                                            <PathIcon Data="{pia:IconGeometry Icon=copy, IconType=regular}"
+                                                      Width="13" Height="13"
+                                                      Foreground="{DynamicResource SemiColorText3}" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Copy toast -->
+                                <TextBlock Text="Copied!"
+                                           IsVisible="{Binding FileBrowser.ShowCopyToast}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource SemiColorSuccess}"
                                            VerticalAlignment="Center" />
+
+                                <!-- Edit mode -->
+                                <StackPanel IsVisible="{Binding FileBrowser.IsEditingPath}"
+                                            Orientation="Horizontal" Spacing="6">
+                                    <PathIcon Data="{pia:IconGeometry Icon=folder_simple, IconType=regular}"
+                                              Width="15" Height="15"
+                                              Foreground="{DynamicResource SemiColorText2}"
+                                              VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding FileBrowser.EditPathText}"
+                                             x:Name="PathEditBox"
+                                             FontFamily="Consolas" FontSize="12"
+                                             Width="400"
+                                             KeyDown="OnPathEditKeyDown" />
+                                    <Button Classes="accent-text" Padding="4,2"
+                                            Command="{Binding FileBrowser.NavigateToEditPathCommand}"
+                                            ToolTip.Tip="Go (Enter)">
+                                        <PathIcon Data="{pia:IconGeometry Icon=arrow_right, IconType=regular}"
+                                                  Width="14" Height="14"
+                                                  Foreground="{DynamicResource SemiColorPrimary}" />
+                                    </Button>
+                                    <Button Classes="accent-text" Padding="4,2"
+                                            Command="{Binding FileBrowser.CancelPathEditCommand}"
+                                            ToolTip.Tip="Cancel (Esc)">
+                                        <PathIcon Data="{pia:IconGeometry Icon=x, IconType=regular}"
+                                                  Width="14" Height="14"
+                                                  Foreground="{DynamicResource SemiColorText2}" />
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- Path error -->
+                                <TextBlock Text="{Binding FileBrowser.PathError}"
+                                           Foreground="{DynamicResource SemiColorDanger}"
+                                           FontSize="11"
+                                           IsVisible="{Binding FileBrowser.PathError, Converter={StaticResource NotNullOrEmptyConverter}}" />
                             </StackPanel>
                         </Border>
                     </Border>
 
+                    <!-- Sort header bar -->
+                    <Border Grid.Row="1" Padding="8,4,0,4"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="45" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="120" />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Grid.ColumnSpan="2"
+                                    Classes="accent-text" Padding="0,2"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding FileBrowser.ToggleSortCommand}"
+                                    CommandParameter="{x:Static vm:FileSortColumn.Name}">
+                                <StackPanel Orientation="Horizontal" Spacing="3">
+                                    <TextBlock Text="Name" FontSize="11"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <TextBlock FontSize="9"
+                                               Foreground="{DynamicResource SemiColorPrimary}"
+                                               Text="{Binding FileBrowser.NameSortArrow}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="2" Classes="accent-text" Padding="4,2"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding FileBrowser.ToggleSortCommand}"
+                                    CommandParameter="{x:Static vm:FileSortColumn.Size}">
+                                <StackPanel Orientation="Horizontal" Spacing="3">
+                                    <TextBlock Text="Size" FontSize="11"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <TextBlock FontSize="9"
+                                               Foreground="{DynamicResource SemiColorPrimary}"
+                                               Text="{Binding FileBrowser.SizeSortArrow}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="4" Classes="accent-text" Padding="4,2"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding FileBrowser.ToggleSortCommand}"
+                                    CommandParameter="{x:Static vm:FileSortColumn.LastModified}">
+                                <StackPanel Orientation="Horizontal" Spacing="3">
+                                    <TextBlock Text="Modified" FontSize="11"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <TextBlock FontSize="9"
+                                               Foreground="{DynamicResource SemiColorPrimary}"
+                                               Text="{Binding FileBrowser.ModifiedSortArrow}" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+
                     <!-- File list area -->
-                    <Grid Grid.Row="1">
+                    <Grid Grid.Row="2">
 
                         <!-- Empty state -->
                         <StackPanel IsVisible="{Binding IsNotConnected}"
@@ -610,15 +864,24 @@
                         <!-- File list -->
                         <ListBox ItemsSource="{Binding FileBrowser.Files}"
                                  SelectedItem="{Binding FileBrowser.SelectedFile, Mode=TwoWay}"
+                                 Classes="file-list"
                                  BorderThickness="0"
                                  Background="Transparent"
-                                 Margin="6">
+                                 Margin="4,2,0,2"
+                                 DoubleTapped="OnFileListDoubleTapped">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="models:RemoteFile">
-                                    <Border Padding="12,6" Margin="0,0,0,2"
+                                    <Border Padding="10,3,0,3" Margin="0"
                                             CornerRadius="6"
                                             Background="Transparent">
-                                        <Grid ColumnDefinitions="Auto,*,90,140">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="20" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="45" />
+                                                <ColumnDefinition Width="30" />
+                                                <ColumnDefinition Width="120" />
+                                            </Grid.ColumnDefinitions>
                                             <PathIcon Grid.Column="0"
                                                       Data="{pia:IconGeometry Icon=folder_simple, IconType=regular}"
                                                       Width="18" Height="18" Margin="0,0,10,0"
@@ -634,11 +897,11 @@
                                                        Foreground="{DynamicResource SemiColorText0}"
                                                        TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Column="2"
-                                                       Text="{Binding Size, StringFormat='{}{0:N0} B'}"
+                                                       Text="{Binding Size, Converter={StaticResource FileSizeConverter}}"
                                                        VerticalAlignment="Center" FontSize="11"
                                                        Foreground="{DynamicResource SemiColorText2}"
                                                        IsVisible="{Binding IsDirectory, Converter={StaticResource BoolInverter}}" />
-                                            <TextBlock Grid.Column="3"
+                                            <TextBlock Grid.Column="4"
                                                        Text="{Binding LastModified, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
                                                        VerticalAlignment="Center" FontSize="11"
                                                        Foreground="{DynamicResource SemiColorText3}" />
@@ -647,6 +910,28 @@
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
+
+                        <!-- Error overlay (after ListBox so it renders on top) -->
+                        <Border IsVisible="{Binding FileBrowser.ErrorMessage, Converter={StaticResource NotNullOrEmptyConverter}}"
+                                Background="{DynamicResource SemiColorBackground1}"
+                                CornerRadius="12"
+                                BoxShadow="0 0 20 0 #18000000"
+                                BorderBrush="{DynamicResource SemiColorBorder}"
+                                BorderThickness="1"
+                                Padding="24,20"
+                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <StackPanel HorizontalAlignment="Center" Spacing="12">
+                                <PathIcon Data="{pia:IconGeometry Icon=warning_circle, IconType=regular}"
+                                          Width="36" Height="36"
+                                          Foreground="{DynamicResource SemiColorDanger}" />
+                                <TextBlock Text="{Binding FileBrowser.ErrorMessage}"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource SemiColorDanger}"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap" MaxWidth="400"
+                                           TextAlignment="Center" />
+                            </StackPanel>
+                        </Border>
 
                     </Grid>
                 </Grid>
