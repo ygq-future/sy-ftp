@@ -1,6 +1,6 @@
 # sy-ftp — 设计与实现参考（README_AI.md）
 
-简短说明：本文件为开发者与 AI 合作时的指引，包含架构概览、UI 设计代{线}、编码规范与关键实现要点。遵循 Avalonia MVVM、CommunityToolkit.Mvvm 源代码生成与 Semi.Avalonia 主题体系。
+简短说明：本文件为开发者与 AI 合作时的指引。**核心规则**：每次代码修改 → 构建 → 运行后，立即停止，等待用户确认。不得继续分析、推测、准备下一个改动。用户未明确确认前，不准进行任何后续操作。，包含架构概览、UI 设计代{线}、编码规范与关键实现要点。遵循 Avalonia MVVM、CommunityToolkit.Mvvm 源代码生成与 Semi.Avalonia 主题体系。
 
 ## 项目概览
 - 名称：sy-ftp

@@ -122,6 +122,8 @@ public partial class MainWindowViewModel : ViewModelBase
         IsConnected = false;
         StatusText = "Disconnected";
         FileBrowser.Files.Clear();
+        FileBrowser.CurrentPath = "/";
+        FileBrowser.ErrorMessage = "";
     }
 
     [RelayCommand]
