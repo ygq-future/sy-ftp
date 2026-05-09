@@ -122,11 +122,30 @@ public partial class HostManagerViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void EditHost(FtpHost? host)
+    private async Task EditHost(FtpHost? host)
     {
         if (host is null) return;
-        // Task 3 will implement the full edit dialog.
-        SelectedHost = host;
+        try
+        {
+            var lifetime = (Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)Avalonia.Application.Current!.ApplicationLifetime!;
+            var mainWindow = lifetime.MainWindow;
+            var dlg = new Views.HostEditWindow { DataContext = host };
+            var result = await dlg.ShowDialog<bool?>(mainWindow);
+            if (result == true)
+            {
+                RefreshDerivedProperties();
+            }
+            else
+            {
+                // still select host so details show
+                SelectedHost = host;
+            }
+        }
+        catch
+        {
+            // Fallback: select host if UI dialog cannot be shown
+            SelectedHost = host;
+        }
     }
 
     [RelayCommand]

@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="sy_ftp.Views.HostEditWindow"
+        Width="420" Height="360"
+        Title="Edit Host">
+  <StackPanel Margin="12" Spacing="8">
+    <TextBlock Text="Name" />
+    <TextBox Text="{Binding Name, Mode=TwoWay}" />
+    <TextBlock Text="Host" />
+    <TextBox Text="{Binding Host, Mode=TwoWay}" />
+    <TextBlock Text="Port" />
+    <TextBox Text="{Binding Port, Mode=TwoWay}" />
+    <TextBlock Text="Username" />
+    <TextBox Text="{Binding Username, Mode=TwoWay}" />
+    <TextBlock Text="Password" />
+    <TextBox Text="{Binding Password, Mode=TwoWay}" />
+    <TextBlock Text="Tags (comma separated)" />
+    <TextBox Text="{Binding Tags, Mode=TwoWay}" />
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+      <Button Content="Cancel" Click="Cancel_Click" />
+      <Button Content="OK" Click="Ok_Click" Classes="Primary" />
+    </StackPanel>
+  </StackPanel>
+</Window>
