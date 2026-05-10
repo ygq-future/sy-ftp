@@ -18,6 +18,8 @@ public partial class FileBrowserViewModel : ViewModelBase
     private readonly IFtpService _ftp;
     private readonly IFileWatcherService _fileWatcher;
 
+    public IFtpService FtpService => _ftp;
+
     [ObservableProperty]
     private ObservableCollection<RemoteFile> _files = [];
 
@@ -51,6 +53,11 @@ public partial class FileBrowserViewModel : ViewModelBase
 
     [ObservableProperty]
     private RemoteFile? _selectedFile;
+
+    [ObservableProperty]
+    private string _lastSyncTime = "";
+
+    private readonly Dictionary<string, (IDisposable Watcher, bool[] Valid)> _activeWatchers = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(NameSortArrow))]
@@ -445,27 +452,7 @@ public partial class FileBrowserViewModel : ViewModelBase
         foreach (var f in files)
         {
             if (f.IsDirectory) continue;
-            IsLoading = true;
-            try
-            {
-                var tempDir = Path.Combine(Path.GetTempPath(), "SY-FTP");
-                Directory.CreateDirectory(tempDir);
-                var tempPath = Path.Combine(tempDir, f.Name);
-
-                await _ftp.DownloadFileAsync(f.FullPath, tempPath, ct: ct);
-
-                using var watcher = _fileWatcher.StartWatching(tempPath, async _ =>
-                {
-                    await _ftp.UploadFileAsync(tempPath, f.FullPath);
-                });
-
-                Process.Start(new ProcessStartInfo(tempPath) { UseShellExecute = true });
-            }
-            catch (OperationCanceledException) { }
-            finally
-            {
-                IsLoading = false;
-            }
+            await EditRemoteAsync(f, ct);
         }
     }
 
@@ -572,31 +559,78 @@ public partial class FileBrowserViewModel : ViewModelBase
     private async Task EditRemoteAsync(RemoteFile? file, CancellationToken ct)
     {
         if (file is not { IsDirectory: false }) return;
+
+        // Invalidate and stop any previous watcher for this remote path
+        if (_activeWatchers.TryGetValue(file.FullPath, out var prev))
+        {
+            prev.Valid[0] = false;
+            prev.Watcher.Dispose();
+            _activeWatchers.Remove(file.FullPath);
+        }
+
         IsLoading = true;
         try
         {
             var tempDir = Path.Combine(Path.GetTempPath(), "SY-FTP");
             Directory.CreateDirectory(tempDir);
-            var tempPath = Path.Combine(tempDir, file.Name);
+            var ext = Path.GetExtension(file.Name);
+            var baseName = Path.GetFileNameWithoutExtension(file.Name);
+            var tempPath = Path.Combine(tempDir, $"{baseName}_{Guid.NewGuid():N}{ext}");
 
             await _ftp.DownloadFileAsync(file.FullPath, tempPath, ct: ct);
 
-            using var watcher = _fileWatcher.StartWatching(tempPath, async _ =>
+            var valid = new bool[] { true };
+
+            var watcher = _fileWatcher.StartWatching(tempPath, async _ =>
             {
-                await _ftp.UploadFileAsync(tempPath, file.FullPath);
+                if (!valid[0])
+                {
+                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        ErrorMessage = "Connection lost — this edit session is invalid. Reconnect and open the file again.";
+                    });
+                    return;
+                }
+
+                try
+                {
+                    await _ftp.UploadFileAsync(tempPath, file.FullPath);
+                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+                    {
+                        LastSyncTime = DateTime.Now.ToString("HH:mm:ss");
+                        await RefreshAsync(CancellationToken.None);
+                    });
+                }
+                catch
+                {
+                    valid[0] = false;
+                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        ErrorMessage = "Upload failed — connection may have dropped. Reconnect and open the file again.";
+                    });
+                }
             });
 
-            Process.Start(new ProcessStartInfo(tempPath) { UseShellExecute = true });
+            _activeWatchers[file.FullPath] = (watcher, valid);
 
-            // Keep alive until the user closes the editor.
-            // In a real implementation this would use a more sophisticated lifecycle.
-            await Task.Delay(Timeout.Infinite, ct).ContinueWith(_ => { });
+            Process.Start(new ProcessStartInfo(tempPath) { UseShellExecute = true });
         }
         catch (OperationCanceledException) { }
         finally
         {
             IsLoading = false;
         }
+    }
+
+    public void StopAllWatchers()
+    {
+        foreach (var (watcher, valid) in _activeWatchers.Values)
+        {
+            valid[0] = false;
+            watcher.Dispose();
+        }
+        _activeWatchers.Clear();
+        LastSyncTime = "";
     }
 
     public async Task UploadViaDragDropAsync(IEnumerable<string> localPaths, CancellationToken ct)
