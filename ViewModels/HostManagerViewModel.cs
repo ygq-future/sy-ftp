@@ -15,7 +15,6 @@ public partial class HostManagerViewModel : ViewModelBase
     private ObservableCollection<FtpHost> _hosts = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FilteredHosts))]
     private FtpHost? _selectedHost;
 
     [ObservableProperty]

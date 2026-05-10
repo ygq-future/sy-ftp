@@ -28,6 +28,8 @@
         <conv:HexToBrushConverter x:Key="HexToBrush" />
         <conv:FileSizeConverter x:Key="FileSizeConverter" />
         <conv:NotNullOrEmptyConverter x:Key="NotNullOrEmptyConverter" />
+        <conv:StringToOpacityConverter x:Key="StringToOpacity" />
+        <conv:BoolToOpacityConverter x:Key="BoolToOpacity" />
     </Window.Resources>
 
     <Window.Styles>
@@ -75,6 +77,24 @@
         <Style Selector="Button.accent-text:disabled /template/ ContentPresenter">
             <Setter Property="Foreground" Value="{DynamicResource SemiColorPrimaryDisabled}" />
             <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <!-- ── Connect primary button: smooth hover transition ── -->
+        <Style Selector="Button.connect-primary /template/ ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <!-- ── Sidebar action buttons (Add / Delete) ── -->
+        <Style Selector="Button.sidebar-btn /template/ ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
         </Style>
 
         <!-- ── Window control buttons (min/max/close) ── -->
@@ -166,10 +186,25 @@
             <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
             <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
         </Style>
+        <!-- Arrow rotation animation -->
+        <Style Selector="ComboBox#TagComboBox /template/ ToggleButton PathIcon">
+            <Setter Property="RenderTransform" Value="rotate(0deg)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="ComboBox#TagComboBox:dropdownopen /template/ ToggleButton PathIcon">
+            <Setter Property="RenderTransform" Value="rotate(180deg)" />
+        </Style>
         <Style Selector="ComboBox#TagComboBox ComboBoxItem">
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Margin" Value="4,2" />
             <Setter Property="Padding" Value="8,5" />
+        </Style>
+        <Style Selector="ComboBox#TagComboBox ComboBoxItem /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
         </Style>
         <Style Selector="ComboBox#TagComboBox ComboBoxItem:selected /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimary}" />
@@ -216,14 +251,19 @@
         <!-- ── File ListBoxItem: accent hover & selection ── -->
         <Style Selector="ListBox.file-list ListBoxItem">
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0" />
+            <Setter Property="Margin" Value="0,1" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="CornerRadius" Value="6" />
         </Style>
         <Style Selector="ListBox.file-list ListBoxItem /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Padding" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.08" />
+                </Transitions>
+            </Setter>
         </Style>
         <Style Selector="ListBox.file-list ListBoxItem:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
@@ -242,6 +282,22 @@
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightPointerover}" />
             <Setter Property="BorderBrush" Value="{DynamicResource SemiColorPrimary}" />
             <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <!-- ── Buttons inside path bar: base bg matches SemiColorFill0 ── -->
+        <Style Selector="Border.path-bar Button.accent-text /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill0}" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.path-bar Button.accent-text:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="Border.path-bar Button.accent-text:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightActive}" />
         </Style>
 
         <!-- Flyout presenter: strip chrome via class selector -->
@@ -275,8 +331,13 @@
             <Setter Property="CornerRadius" Value="6" />
         </Style>
         <Style Selector="ListBox.overflow-flyout ListBoxItem /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
             <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
         </Style>
         <Style Selector="ListBox.overflow-flyout ListBoxItem:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
@@ -369,15 +430,26 @@
                     <Panel>
                         <PathIcon Data="{pia:IconGeometry Icon=sun, IconType=fill}"
                                   Width="16" Height="16"
-                                  IsVisible="{Binding IsDarkMode}" />
+                                  Opacity="{Binding IsDarkMode, Converter={StaticResource BoolToOpacity}}">
+                            <PathIcon.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                                </Transitions>
+                            </PathIcon.Transitions>
+                        </PathIcon>
                         <PathIcon Data="{pia:IconGeometry Icon=moon, IconType=fill}"
                                   Width="16" Height="16"
-                                  IsVisible="{Binding IsDarkMode, Converter={StaticResource BoolInverter}}" />
+                                  Opacity="{Binding IsDarkMode, Converter={StaticResource BoolToOpacity}, ConverterParameter=invert}">
+                            <PathIcon.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                                </Transitions>
+                            </PathIcon.Transitions>
+                        </PathIcon>
                     </Panel>
                 </Button>
 
                 <ToggleButton IsChecked="{Binding IsTopmost}"
-                              Command="{Binding ToggleTopmostCommand}"
                               Classes="icon-toggle"
                               Padding="9,0" Height="32" CornerRadius="7"
                               ToolTip.Tip="Always on top">
@@ -385,11 +457,23 @@
                         <PathIcon Data="{pia:IconGeometry Icon=push_pin_simple, IconType=fill}"
                                   Width="16" Height="16"
                                   Foreground="{DynamicResource SemiColorPrimary}"
-                                  IsVisible="{Binding IsTopmost}" />
+                                  Opacity="{Binding IsTopmost, Converter={StaticResource BoolToOpacity}}">
+                            <PathIcon.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                                </Transitions>
+                            </PathIcon.Transitions>
+                        </PathIcon>
                         <PathIcon Data="{pia:IconGeometry Icon=push_pin_simple, IconType=regular}"
                                   Width="16" Height="16"
                                   Foreground="{DynamicResource SemiColorText2}"
-                                  IsVisible="{Binding IsTopmost, Converter={StaticResource BoolInverter}}" />
+                                  Opacity="{Binding IsTopmost, Converter={StaticResource BoolToOpacity}, ConverterParameter=invert}">
+                            <PathIcon.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                                </Transitions>
+                            </PathIcon.Transitions>
+                        </PathIcon>
                     </Panel>
                 </ToggleButton>
 
@@ -453,6 +537,7 @@
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
                                 <!-- Add: small text button in accent colour -->
                                 <Button Command="{Binding HostManager.AddHostCommand}"
+                                        Classes="sidebar-btn"
                                         Padding="8,3" CornerRadius="6"
                                         FontSize="11" FontWeight="Medium"
                                         Background="{DynamicResource SemiColorPrimaryLight}"
@@ -463,6 +548,7 @@
                                 <!-- Delete: small text button in danger colour -->
                                 <Button Command="{Binding HostManager.DeleteHostCommand}"
                                         CommandParameter="{Binding HostManager.SelectedHost}"
+                                        Classes="sidebar-btn"
                                         Padding="8,3" CornerRadius="6"
                                         FontSize="11" FontWeight="Medium"
                                         Background="{DynamicResource SemiColorDangerLight}"
@@ -552,7 +638,7 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:FtpHost">
                                 <Border Classes="host-card"
-                                        Padding="10,9" Margin="0,0,0,3"
+                                        Padding="10,9" Margin="0,0,0,4"
                                         CornerRadius="8"
                                         Background="{DynamicResource SemiColorFill0}"
                                         BorderBrush="{DynamicResource SemiColorBorder}"
@@ -637,11 +723,12 @@
                 <Grid RowDefinitions="Auto,Auto,*">
 
                     <!-- Path breadcrumb -->
-                    <Border Grid.Row="0" Padding="12,9"
+                    <Border Grid.Row="0" Padding="12,6"
                             BorderBrush="{DynamicResource SemiColorBorder}"
                             BorderThickness="0,0,0,1">
-                        <Border Background="{DynamicResource SemiColorFill0}"
-                                CornerRadius="8" Padding="10,6"
+                        <Border Classes="path-bar"
+                                Background="{DynamicResource SemiColorFill0}"
+                                CornerRadius="8" Padding="10,5"
                                 VerticalAlignment="Center"
                                 IsEnabled="{Binding IsConnected}"
                                 DoubleTapped="OnPathBarDoubleTapped">
@@ -753,13 +840,6 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Copy toast -->
-                                <TextBlock Text="Copied!"
-                                           IsVisible="{Binding FileBrowser.ShowCopyToast}"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource SemiColorSuccess}"
-                                           VerticalAlignment="Center" />
-
                                 <!-- Edit mode -->
                                 <StackPanel IsVisible="{Binding FileBrowser.IsEditingPath}"
                                             Orientation="Horizontal" Spacing="6">
@@ -787,18 +867,12 @@
                                                   Foreground="{DynamicResource SemiColorText2}" />
                                     </Button>
                                 </StackPanel>
-
-                                <!-- Path error -->
-                                <TextBlock Text="{Binding FileBrowser.PathError}"
-                                           Foreground="{DynamicResource SemiColorDanger}"
-                                           FontSize="11"
-                                           IsVisible="{Binding FileBrowser.PathError, Converter={StaticResource NotNullOrEmptyConverter}}" />
                             </StackPanel>
                         </Border>
                     </Border>
 
                     <!-- Sort header bar -->
-                    <Border Grid.Row="1" Padding="8,4,0,4"
+                    <Border Grid.Row="1" Padding="8,2,0,2"
                             BorderBrush="{DynamicResource SemiColorBorder}"
                             BorderThickness="0,0,0,1">
                         <Grid>
@@ -852,9 +926,58 @@
                     <!-- File list area -->
                     <Grid Grid.Row="2">
 
+                        <!-- Floating toasts (copy + path error) -->
+                        <Border IsVisible="{Binding FileBrowser.ShowCopyToast}"
+                                Background="{DynamicResource SemiColorBackground1}"
+                                CornerRadius="8"
+                                BoxShadow="0 2 12 0 #28000000"
+                                BorderBrush="{DynamicResource SemiColorBorder}"
+                                BorderThickness="1"
+                                Padding="14,8"
+                                HorizontalAlignment="Center" VerticalAlignment="Top"
+                                Margin="0,12,0,0"
+                                ZIndex="10"
+                                IsHitTestVisible="False">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="{pia:IconGeometry Icon=check_circle, IconType=fill}"
+                                          Width="14" Height="14"
+                                          Foreground="{DynamicResource SemiColorSuccess}" />
+                                <TextBlock Text="Path copied!"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SemiColorSuccess}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border IsVisible="{Binding FileBrowser.PathError, Converter={StaticResource NotNullOrEmptyConverter}}"
+                                Background="{DynamicResource SemiColorBackground1}"
+                                CornerRadius="8"
+                                BoxShadow="0 2 12 0 #28000000"
+                                BorderBrush="{DynamicResource SemiColorDanger}"
+                                BorderThickness="1"
+                                Padding="14,8"
+                                HorizontalAlignment="Center" VerticalAlignment="Top"
+                                Margin="0,12,0,0"
+                                ZIndex="10"
+                                IsHitTestVisible="False">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="{pia:IconGeometry Icon=warning_circle, IconType=fill}"
+                                          Width="14" Height="14"
+                                          Foreground="{DynamicResource SemiColorDanger}" />
+                                <TextBlock Text="{Binding FileBrowser.PathError}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SemiColorDanger}" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Empty state -->
-                        <StackPanel IsVisible="{Binding IsNotConnected}"
+                        <StackPanel Opacity="{Binding IsNotConnected, Converter={StaticResource BoolToOpacity}}"
+                                    IsHitTestVisible="False"
                                     HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
+                            <StackPanel.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                                </Transitions>
+                            </StackPanel.Transitions>
                             <PathIcon Data="{pia:IconGeometry Icon=cloud, IconType=regular}"
                                       Width="52" Height="52"
                                       Foreground="{DynamicResource SemiColorText3}" />
@@ -864,19 +987,6 @@
                                        HorizontalAlignment="Center" />
                         </StackPanel>
 
-                        <!-- Loading overlay -->
-                        <Border IsVisible="{Binding FileBrowser.IsLoading}"
-                                Background="{DynamicResource SemiColorOverlayBackground}"
-                                CornerRadius="0">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
-                                <ProgressBar IsIndeterminate="True" Width="200" Height="4"
-                                             Foreground="{DynamicResource SemiColorPrimary}" />
-                                <TextBlock Text="Loading directory…" FontSize="12"
-                                           Foreground="{DynamicResource SemiColorText2}"
-                                           HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
-
                         <!-- File list -->
                         <ListBox x:Name="FileListBox"
                                  ItemsSource="{Binding FileBrowser.Files}"
@@ -885,7 +995,7 @@
                                  Classes="file-list"
                                  BorderThickness="0"
                                  Background="Transparent"
-                                 Margin="4,2,0,2"
+                                 Margin="4,2,4,2"
                                  DoubleTapped="OnFileListDoubleTapped"
                                  Tapped="OnFileListTapped"
                                  KeyDown="OnFileListKeyDown"
@@ -1072,7 +1182,8 @@
                         </Canvas>
 
                         <!-- Error overlay (after ListBox so it renders on top) -->
-                        <Border IsVisible="{Binding FileBrowser.ErrorMessage, Converter={StaticResource NotNullOrEmptyConverter}}"
+                        <Border Opacity="{Binding FileBrowser.ErrorMessage, Converter={StaticResource StringToOpacity}}"
+                                IsHitTestVisible="{Binding FileBrowser.ErrorMessage, Converter={StaticResource NotNullOrEmptyConverter}}"
                                 Background="{DynamicResource SemiColorBackground1}"
                                 CornerRadius="12"
                                 BoxShadow="0 0 20 0 #18000000"
@@ -1080,6 +1191,11 @@
                                 BorderThickness="1"
                                 Padding="24,20"
                                 HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                                </Transitions>
+                            </Border.Transitions>
                             <StackPanel HorizontalAlignment="Center" Spacing="12">
                                 <PathIcon Data="{pia:IconGeometry Icon=warning_circle, IconType=regular}"
                                           Width="36" Height="36"
@@ -1110,32 +1226,64 @@
                 BorderThickness="1"
                 Padding="14,5" Margin="8,6,8,8">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto">
-                <PathIcon Grid.Column="0"
-                          Data="{pia:IconGeometry Icon=circle, IconType=fill}"
-                          Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center"
-                          Foreground="{DynamicResource SemiColorDanger}"
-                          IsVisible="{Binding IsNotConnected}" />
-                <PathIcon Grid.Column="0"
-                          Data="{pia:IconGeometry Icon=circle, IconType=fill}"
-                          Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center"
-                          Foreground="{DynamicResource SemiColorSuccess}"
-                          IsVisible="{Binding IsConnected}" />
+                <Panel Grid.Column="0" Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center">
+                    <PathIcon Data="{pia:IconGeometry Icon=circle, IconType=fill}"
+                              Width="9" Height="9"
+                              Foreground="{DynamicResource SemiColorDanger}"
+                              Opacity="{Binding IsNotConnected, Converter={StaticResource BoolToOpacity}}">
+                        <PathIcon.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                            </Transitions>
+                        </PathIcon.Transitions>
+                    </PathIcon>
+                    <PathIcon Data="{pia:IconGeometry Icon=circle, IconType=fill}"
+                              Width="9" Height="9"
+                              Foreground="{DynamicResource SemiColorSuccess}"
+                              Opacity="{Binding IsConnected, Converter={StaticResource BoolToOpacity}}">
+                        <PathIcon.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                            </Transitions>
+                        </PathIcon.Transitions>
+                    </PathIcon>
+                </Panel>
                 <TextBlock Grid.Column="1" Text="{Binding StatusText}"
                            FontSize="12" Foreground="{DynamicResource SemiColorText1}"
                            VerticalAlignment="Center" />
                 <!-- Indeterminate: directory loading -->
                 <ProgressBar Grid.Column="2"
-                             IsVisible="{Binding FileBrowser.IsLoading}"
+                             Opacity="{Binding FileBrowser.IsLoading, Converter={StaticResource BoolToOpacity}}"
+                             IsHitTestVisible="False"
                              IsIndeterminate="True" Width="90" Height="4" Margin="10,0"
-                             Foreground="{DynamicResource SemiColorPrimary}" />
+                             Foreground="{DynamicResource SemiColorPrimary}">
+                    <ProgressBar.Transitions>
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                        </Transitions>
+                    </ProgressBar.Transitions>
+                </ProgressBar>
                 <!-- Determinate: file download -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8"
-                            IsVisible="{Binding FileBrowser.IsDownloading}" Margin="10,0">
+                            Opacity="{Binding FileBrowser.IsDownloading, Converter={StaticResource BoolToOpacity}}"
+                            IsHitTestVisible="{Binding FileBrowser.IsDownloading}"
+                            Margin="10,0">
+                    <StackPanel.Transitions>
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                        </Transitions>
+                    </StackPanel.Transitions>
                     <ProgressBar IsIndeterminate="False"
                                  Value="{Binding FileBrowser.DownloadProgress}"
                                  Minimum="0" Maximum="100"
                                  Width="120" Height="4"
-                                 Foreground="{DynamicResource SemiColorPrimary}" />
+                                 Foreground="{DynamicResource SemiColorPrimary}">
+                        <ProgressBar.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Value" Duration="0:0:0.2" />
+                            </Transitions>
+                        </ProgressBar.Transitions>
+                    </ProgressBar>
                     <TextBlock Text="{Binding FileBrowser.DownloadStatusText}"
                                FontSize="11"
                                Foreground="{DynamicResource SemiColorText2}"
@@ -1144,17 +1292,38 @@
                 </StackPanel>
                 <Separator Grid.Column="3" Width="1" Margin="10,3"
                            Background="{DynamicResource SemiColorBorder}"
-                           IsVisible="{Binding IsConnected}" />
+                           Opacity="{Binding IsConnected, Converter={StaticResource BoolToOpacity}}"
+                           IsHitTestVisible="False">
+                    <Separator.Transitions>
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                        </Transitions>
+                    </Separator.Transitions>
+                </Separator>
                 <TextBlock Grid.Column="4"
                            Text="{Binding FileBrowser.Files.Count, StringFormat='{}{0} items'}"
                            FontSize="11" Margin="0,0,2,0" VerticalAlignment="Center"
                            Foreground="{DynamicResource SemiColorText3}"
-                           IsVisible="{Binding IsConnected}" />
+                           Opacity="{Binding IsConnected, Converter={StaticResource BoolToOpacity}}"
+                           IsHitTestVisible="False">
+                    <TextBlock.Transitions>
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                        </Transitions>
+                    </TextBlock.Transitions>
+                </TextBlock>
                 <Separator Grid.Column="5" Width="1" Margin="10,3"
                            Background="{DynamicResource SemiColorBorder}"
-                           IsVisible="{Binding FileBrowser.LastSyncTime, Converter={StaticResource NotNullOrEmptyConverter}}" />
+                           Opacity="{Binding FileBrowser.LastSyncTime, Converter={StaticResource StringToOpacity}}"
+                           IsHitTestVisible="False" />
                 <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
-                            IsVisible="{Binding FileBrowser.LastSyncTime, Converter={StaticResource NotNullOrEmptyConverter}}">
+                            Opacity="{Binding FileBrowser.LastSyncTime, Converter={StaticResource StringToOpacity}}"
+                            IsHitTestVisible="{Binding FileBrowser.LastSyncTime, Converter={StaticResource NotNullOrEmptyConverter}}">
+                    <StackPanel.Transitions>
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                        </Transitions>
+                    </StackPanel.Transitions>
                     <PathIcon Data="{pia:IconGeometry Icon=arrow_counter_clockwise, IconType=regular}"
                               Width="11" Height="11"
                               Foreground="{DynamicResource SemiColorSuccess}" />
