@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:pia="using:PhosphorIconsAvalonia.Markup"
+        x:Class="sy_ftp.Views.InputDialog"
+        Width="360" MinHeight="200" SizeToContent="Height"
+        WindowDecorations="None"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="Transparent">
+
+    <Border x:Name="CardBorder"
+            CornerRadius="12" Margin="8" Padding="24"
+            Background="{DynamicResource SemiColorBackground1}"
+            BorderBrush="{DynamicResource SemiColorBorder}"
+            BorderThickness="1"
+            PointerPressed="OnCardDrag">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto">
+
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,12">
+                <PathIcon Data="{pia:IconGeometry Icon=file_plus, IconType=regular}"
+                          Width="20" Height="20"
+                          Foreground="{DynamicResource SemiColorPrimary}" />
+                <TextBlock x:Name="TitleBlock" Text="New Item"
+                           FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SemiColorText0}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Input -->
+            <StackPanel Grid.Row="1" Spacing="4">
+                <TextBlock x:Name="LabelBlock" Text="Name" FontSize="12"
+                           Foreground="{DynamicResource SemiColorText2}" />
+                <TextBox x:Name="InputBox"
+                         KeyDown="OnInputKeyDown"
+                         Background="{DynamicResource SemiColorFill0}"
+                         BorderBrush="{DynamicResource SemiColorBorder}"
+                         CornerRadius="6" Padding="10,7" />
+            </StackPanel>
+
+            <!-- Error -->
+            <Border x:Name="ErrorBorder"
+                    Grid.Row="2"
+                    IsVisible="False"
+                    Background="{DynamicResource SemiColorDangerLight}"
+                    CornerRadius="6" Padding="10,6" Margin="0,10,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{pia:IconGeometry Icon=warning_circle, IconType=regular}"
+                              Width="14" Height="14"
+                              Foreground="{DynamicResource SemiColorDanger}" />
+                    <TextBlock x:Name="ErrorText"
+                               Foreground="{DynamicResource SemiColorDanger}"
+                               FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="3" Orientation="Horizontal"
+                        HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+                <Button Content="Cancel" Click="Cancel_Click"
+                        Background="Transparent"
+                        BorderBrush="{DynamicResource SemiColorPrimary}"
+                        Foreground="{DynamicResource SemiColorPrimary}"
+                        BorderThickness="1"
+                        CornerRadius="6" Padding="12,6" />
+                <Button Content="OK" Click="Ok_Click"
+                        Background="{DynamicResource SemiColorPrimary}"
+                        Foreground="White"
+                        BorderThickness="0"
+                        CornerRadius="6" Padding="12,6" />
+            </StackPanel>
+
+        </Grid>
+    </Border>
+</Window>

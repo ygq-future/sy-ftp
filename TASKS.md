@@ -108,6 +108,6 @@
 - **编译绑定**：`AvaloniaUseCompiledBindingsByDefault` 全局开启，View 声明 `x:DataType`
 - **代码风格**：不加注释（除非 WHY 不显然），不引入未请求的抽象，简洁优先
 
-## 执行建议
-- 每次改动后执行：`taskkill /F /IM sy-ftp.exe /T && dotnet build && dotnet run`
+## 开发流程遵守
+- 每次改动后使用powershell执行：`taskkill /F /IM sy-ftp.exe /T`，然后再执行：`dotnet build && dotnet run`
 - 小步快跑：每完成一项提交并在 PR 描述写明验收步骤

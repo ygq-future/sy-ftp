@@ -237,6 +237,12 @@
         <Style Selector="ListBox.file-list ListBoxItem:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightActive}" />
         </Style>
+        <!-- Drop target highlight during internal drag-move -->
+        <Style Selector="ListBox.file-list ListBoxItem.drop-target /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightPointerover}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorPrimary}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
 
         <!-- Flyout presenter: strip chrome via class selector -->
         <Style Selector="FlyoutPresenter.path-overflow">
@@ -863,7 +869,8 @@
                                 Background="{DynamicResource SemiColorOverlayBackground}"
                                 CornerRadius="0">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
-                                <ProgressBar IsIndeterminate="True" Width="200" Height="4" />
+                                <ProgressBar IsIndeterminate="True" Width="200" Height="4"
+                                             Foreground="{DynamicResource SemiColorPrimary}" />
                                 <TextBlock Text="Loading directory…" FontSize="12"
                                            Foreground="{DynamicResource SemiColorText2}"
                                            HorizontalAlignment="Center" />
@@ -871,18 +878,112 @@
                         </Border>
 
                         <!-- File list -->
-                        <ListBox ItemsSource="{Binding FileBrowser.Files}"
+                        <ListBox x:Name="FileListBox"
+                                 ItemsSource="{Binding FileBrowser.Files}"
                                  SelectedItem="{Binding FileBrowser.SelectedFile, Mode=TwoWay}"
+                                 SelectionMode="Multiple"
                                  Classes="file-list"
                                  BorderThickness="0"
                                  Background="Transparent"
                                  Margin="4,2,0,2"
-                                 DoubleTapped="OnFileListDoubleTapped">
+                                 DoubleTapped="OnFileListDoubleTapped"
+                                 Tapped="OnFileListTapped"
+                                 KeyDown="OnFileListKeyDown"
+                                 DragDrop.AllowDrop="True"
+                                 DragDrop.DragOver="OnFileListDragOver"
+                                 DragDrop.Drop="OnFileListDrop">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Refresh"
+                                              Command="{Binding FileBrowser.RefreshCommand}"
+                                              IsEnabled="{Binding IsConnected}">
+                                        <MenuItem.Icon>
+                                            <PathIcon Data="{pia:IconGeometry Icon=arrow_clockwise, IconType=regular}"
+                                                      Width="14" Height="14" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem Header="New Folder"
+                                              Command="{Binding FileBrowser.NewFolderCommand}"
+                                              IsEnabled="{Binding IsConnected}">
+                                        <MenuItem.Icon>
+                                            <PathIcon Data="{pia:IconGeometry Icon=folder_simple_plus, IconType=regular}"
+                                                      Width="14" Height="14" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="New File"
+                                              Command="{Binding FileBrowser.NewFileCommand}"
+                                              IsEnabled="{Binding IsConnected}">
+                                        <MenuItem.Icon>
+                                            <PathIcon Data="{pia:IconGeometry Icon=file_plus, IconType=regular}"
+                                                      Width="14" Height="14" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="models:RemoteFile">
                                     <Border Padding="10,3,0,3" Margin="0"
                                             CornerRadius="6"
-                                            Background="Transparent">
+                                            Background="Transparent"
+                                            ContextRequested="OnFileItemContextRequested">
+                                        <Border.ContextMenu>
+                                            <ContextMenu x:Name="ItemContextMenu"
+                                                         IsVisible="{Binding !IsParentEntry}">
+                                                <MenuItem Header="Download" Click="OnItemDownloadClick">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=download_simple, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Download to…" Click="OnItemDownloadToClick">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=folder_open, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Remote Edit"
+                                                          Click="OnItemRemoteEditClick"
+                                                          IsVisible="{Binding DataContext.FileBrowser.AllSelectedAreFiles, ElementName=RootWindow}">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=pencil_simple, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Delete" Click="OnItemDeleteClick">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=trash_simple, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator x:Name="ItemContextMenuSeparator"
+                                                           IsVisible="{Binding DataContext.FileBrowser.HasMultiSelection, ElementName=RootWindow, Converter={StaticResource BoolInverter}}" />
+                                                <MenuItem Header="Refresh"
+                                                          Command="{Binding DataContext.FileBrowser.RefreshCommand, ElementName=RootWindow}"
+                                                          IsVisible="{Binding DataContext.FileBrowser.HasMultiSelection, ElementName=RootWindow, Converter={StaticResource BoolInverter}}">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=arrow_clockwise, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="New Folder"
+                                                          Command="{Binding DataContext.FileBrowser.NewFolderCommand, ElementName=RootWindow}"
+                                                          IsVisible="{Binding DataContext.FileBrowser.HasMultiSelection, ElementName=RootWindow, Converter={StaticResource BoolInverter}}">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=folder_simple_plus, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="New File"
+                                                          Command="{Binding DataContext.FileBrowser.NewFileCommand, ElementName=RootWindow}"
+                                                          IsVisible="{Binding DataContext.FileBrowser.HasMultiSelection, ElementName=RootWindow, Converter={StaticResource BoolInverter}}">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=file_plus, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="20" />
@@ -891,6 +992,17 @@
                                                 <ColumnDefinition Width="30" />
                                                 <ColumnDefinition Width="120" />
                                             </Grid.ColumnDefinitions>
+                                            <!-- ".." entry -->
+                                            <PathIcon Grid.Column="0"
+                                                      Data="{pia:IconGeometry Icon=arrow_bend_left_up, IconType=regular}"
+                                                      Width="16" Height="16" Margin="0,0,10,0"
+                                                      Foreground="{DynamicResource SemiColorText2}"
+                                                      IsVisible="{Binding IsParentEntry}" />
+                                            <TextBlock Grid.Column="1" Text=".."
+                                                       FontSize="13" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SemiColorText2}"
+                                                       IsVisible="{Binding IsParentEntry}" />
+                                            <!-- Normal entries -->
                                             <PathIcon Grid.Column="0"
                                                       Data="{pia:IconGeometry Icon=folder_simple, IconType=regular}"
                                                       Width="18" Height="18" Margin="0,0,10,0"
@@ -904,7 +1016,8 @@
                                             <TextBlock Grid.Column="1" Text="{Binding Name}"
                                                        FontSize="13" VerticalAlignment="Center"
                                                        Foreground="{DynamicResource SemiColorText0}"
-                                                       TextTrimming="CharacterEllipsis" />
+                                                       TextTrimming="CharacterEllipsis"
+                                                       IsVisible="{Binding IsParentEntry, Converter={StaticResource BoolInverter}}" />
                                             <TextBlock Grid.Column="2"
                                                        Text="{Binding Size, Converter={StaticResource FileSizeConverter}}"
                                                        VerticalAlignment="Center" FontSize="11"
@@ -913,12 +1026,42 @@
                                             <TextBlock Grid.Column="4"
                                                        Text="{Binding LastModified, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
                                                        VerticalAlignment="Center" FontSize="11"
-                                                       Foreground="{DynamicResource SemiColorText3}" />
+                                                       Foreground="{DynamicResource SemiColorText3}"
+                                                       IsVisible="{Binding IsParentEntry, Converter={StaticResource BoolInverter}}" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
+
+                        <!-- Rubber-band selection overlay -->
+                        <Canvas x:Name="SelectionCanvas" IsHitTestVisible="False">
+                            <Border x:Name="SelectionRect"
+                                    IsVisible="False"
+                                    Background="{DynamicResource SemiColorPrimaryLight}"
+                                    BorderBrush="{DynamicResource SemiColorPrimary}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Opacity="0.4" />
+                        </Canvas>
+
+                        <!-- Drag ghost: follows cursor during internal drag -->
+                        <Canvas x:Name="DragGhostCanvas" IsHitTestVisible="False" IsVisible="False">
+                            <Border x:Name="DragGhost"
+                                    Background="{DynamicResource SemiColorBackground1}"
+                                    BorderBrush="{DynamicResource SemiColorPrimary}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    BoxShadow="0 4 12 0 #28000000"
+                                    Padding="10,6"
+                                    Opacity="0.88">
+                                <TextBlock x:Name="DragGhostLabel"
+                                           FontSize="12" FontWeight="Medium"
+                                           Foreground="{DynamicResource SemiColorText0}"
+                                           MaxWidth="200"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Border>
+                        </Canvas>
 
                         <!-- Error overlay (after ListBox so it renders on top) -->
                         <Border IsVisible="{Binding FileBrowser.ErrorMessage, Converter={StaticResource NotNullOrEmptyConverter}}"
@@ -972,9 +1115,25 @@
                 <TextBlock Grid.Column="1" Text="{Binding StatusText}"
                            FontSize="12" Foreground="{DynamicResource SemiColorText1}"
                            VerticalAlignment="Center" />
+                <!-- Indeterminate: directory loading -->
                 <ProgressBar Grid.Column="2"
                              IsVisible="{Binding FileBrowser.IsLoading}"
-                             IsIndeterminate="True" Width="90" Height="4" Margin="10,0" />
+                             IsIndeterminate="True" Width="90" Height="4" Margin="10,0"
+                             Foreground="{DynamicResource SemiColorPrimary}" />
+                <!-- Determinate: file download -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8"
+                            IsVisible="{Binding FileBrowser.IsDownloading}" Margin="10,0">
+                    <ProgressBar IsIndeterminate="False"
+                                 Value="{Binding FileBrowser.DownloadProgress}"
+                                 Minimum="0" Maximum="100"
+                                 Width="120" Height="4"
+                                 Foreground="{DynamicResource SemiColorPrimary}" />
+                    <TextBlock Text="{Binding FileBrowser.DownloadStatusText}"
+                               FontSize="11"
+                               Foreground="{DynamicResource SemiColorText2}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
                 <Separator Grid.Column="3" Width="1" Margin="10,3"
                            Background="{DynamicResource SemiColorBorder}"
                            IsVisible="{Binding IsConnected}" />

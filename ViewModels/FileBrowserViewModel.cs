@@ -2,8 +2,10 @@ using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using sy_ftp.Helpers;
 using sy_ftp.Models;
 using sy_ftp.Services;
 
@@ -21,6 +23,7 @@ public partial class FileBrowserViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PathSegments))]
+    [NotifyPropertyChangedFor(nameof(ParentPath))]
     private string _currentPath = "/";
 
     [ObservableProperty]
@@ -91,6 +94,26 @@ public partial class FileBrowserViewModel : ViewModelBase
     }
 
     public bool IsNotLoading => !IsLoading;
+
+    // ── Download progress ───────────────────────────────────────────────
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNotDownloading))]
+    private bool _isDownloading;
+
+    [ObservableProperty]
+    private double _downloadProgress;
+
+    [ObservableProperty]
+    private long _downloadedBytes;
+
+    [ObservableProperty]
+    private long _totalDownloadBytes;
+
+    [ObservableProperty]
+    private string _downloadStatusText = "";
+
+    public bool IsNotDownloading => !IsDownloading;
 
     public string NameSortArrow => ArrowFor(FileSortColumn.Name);
     public string SizeSortArrow => ArrowFor(FileSortColumn.Size);
@@ -216,23 +239,26 @@ public partial class FileBrowserViewModel : ViewModelBase
 
     private void ApplySort()
     {
-        var ordered = Files.OrderBy(f => !f.IsDirectory);
+        // Keep ".." pinned at top, then dirs before files, then apply column sort
+        var parent = Files.FirstOrDefault(f => f.IsParentEntry);
+        var rest = Files.Where(f => !f.IsParentEntry).OrderBy(f => !f.IsDirectory);
 
         IOrderedEnumerable<RemoteFile> sorted = SortColumn switch
         {
             FileSortColumn.Name => SortAscending
-                ? ordered.ThenBy(f => f.Name)
-                : ordered.ThenByDescending(f => f.Name),
+                ? rest.ThenBy(f => f.Name)
+                : rest.ThenByDescending(f => f.Name),
             FileSortColumn.Size => SortAscending
-                ? ordered.ThenBy(f => f.Size)
-                : ordered.ThenByDescending(f => f.Size),
+                ? rest.ThenBy(f => f.Size)
+                : rest.ThenByDescending(f => f.Size),
             FileSortColumn.LastModified => SortAscending
-                ? ordered.ThenBy(f => f.LastModified)
-                : ordered.ThenByDescending(f => f.LastModified),
-            _ => ordered.ThenBy(f => f.Name)
+                ? rest.ThenBy(f => f.LastModified)
+                : rest.ThenByDescending(f => f.LastModified),
+            _ => rest.ThenBy(f => f.Name)
         };
 
         var list = sorted.ToList();
+        if (parent is not null) list.Insert(0, parent);
         Files.Clear();
         foreach (var f in list)
             Files.Add(f);
@@ -254,15 +280,225 @@ public partial class FileBrowserViewModel : ViewModelBase
     [RelayCommand]
     private async Task DownloadAsync(RemoteFile? file, CancellationToken ct)
     {
-        if (file is not { IsDirectory: false }) return;
+        SelectedFile = file;
+        await DownloadSelectedAsync(ct);
+    }
+
+    [RelayCommand]
+    private async Task DownloadSelectedAsync(CancellationToken ct)
+    {
+        var list = ResolveSelectedList();
+        if (list.Count == 0) return;
+
+        FtpPathHelper.Ensure();
+        await DownloadListAsync(list, FtpPathHelper.DefaultDownloadDir, ct);
+    }
+
+    [RelayCommand]
+    private async Task DownloadToAsync(CancellationToken ct)
+    {
+        var list = ResolveSelectedList();
+        if (list.Count == 0) return;
+
+        var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = lifetime?.MainWindow;
+        if (mainWindow is null) return;
+
+        var folders = await mainWindow.StorageProvider.OpenFolderPickerAsync(
+            new Avalonia.Platform.Storage.FolderPickerOpenOptions
+            {
+                Title = "Choose download folder",
+                AllowMultiple = false
+            });
+        if (folders.Count == 0) return;
+
+        var targetDir = folders[0].TryGetLocalPath();
+        if (string.IsNullOrEmpty(targetDir)) return;
+
+        await DownloadListAsync(list, targetDir, ct);
+    }
+
+    private List<RemoteFile> ResolveSelectedList()
+    {
+        var list = SelectedFiles is { Count: > 0 }
+            ? SelectedFiles.ToList()
+            : SelectedFile is not null ? new List<RemoteFile> { SelectedFile } : new();
+        return list.Where(f => !f.IsParentEntry).ToList();
+    }
+
+    private async Task DownloadListAsync(List<RemoteFile> list, string targetDir, CancellationToken ct)
+    {
+        IsDownloading = true;
+        DownloadProgress = 0;
+        DownloadedBytes = 0;
+        TotalDownloadBytes = 0;
+
+        try
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                var file = list[i];
+                var label = list.Count > 1
+                    ? $"{file.Name} ({i + 1}/{list.Count})"
+                    : file.Name;
+                DownloadStatusText = $"Downloading {label}...";
+
+                int index = i;
+                int total = list.Count;
+                var progress = new Progress<double>(pct =>
+                {
+                    DownloadProgress = (index * 100.0 + pct) / total;
+                    DownloadStatusText = $"Downloading {label}... {pct:F0}%";
+                });
+
+                if (file.IsDirectory)
+                {
+                    var localDir = Path.Combine(targetDir, file.Name);
+                    await _ftp.DownloadDirectoryAsync(file.FullPath, localDir, progress, ct);
+                }
+                else
+                {
+                    var localPath = Path.Combine(targetDir, file.Name);
+                    await _ftp.DownloadFileAsync(file.FullPath, localPath, progress, ct);
+                }
+            }
+
+            DownloadProgress = 100;
+            DownloadStatusText = list.Count > 1
+                ? $"Downloaded {list.Count} items"
+                : $"Downloaded {list[0].Name}";
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsDownloading = false;
+        }
+    }
+
+    private void UpdateDownloadStatus(string fileName)
+    {
+        var down = DownloadedBytes;
+        var total = TotalDownloadBytes;
+        if (total <= 0)
+        {
+            DownloadStatusText = $"Downloading {fileName}...";
+            return;
+        }
+        DownloadStatusText = $"Downloading {fileName}... {FormatBytes(down)} / {FormatBytes(total)}";
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        return bytes switch
+        {
+            < 1024 => $"{bytes:N0} B",
+            < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+            < 1024L * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+            _ => $"{bytes / (1024.0 * 1024 * 1024):F1} GB"
+        };
+    }
+
+    // Multi-select — set by code-behind before commands execute
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AllSelectedAreFiles))]
+    [NotifyPropertyChangedFor(nameof(HasMultiSelection))]
+    private IReadOnlyList<RemoteFile> _selectedFiles = Array.Empty<RemoteFile>();
+
+    public bool AllSelectedAreFiles =>
+        SelectedFiles is { Count: > 0 } && SelectedFiles.All(f => !f.IsDirectory);
+
+    public bool HasMultiSelection => SelectedFiles.Count > 1;
+
+    [RelayCommand]
+    private async Task DeleteSelectedAsync(CancellationToken ct)
+    {
+        var files = SelectedFiles.Where(f => !f.IsParentEntry).ToList();
+        if (files.Count == 0) return;
+        try
+        {
+            foreach (var f in files)
+            {
+                if (f.IsDirectory)
+                    await _ftp.DeleteDirectoryAsync(f.FullPath, ct);
+                else
+                    await _ftp.DeleteFileAsync(f.FullPath, ct);
+            }
+            await RefreshAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task EditSelectedAsync(CancellationToken ct)
+    {
+        var files = SelectedFiles;
+        if (files is not { Count: > 0 }) return;
+        foreach (var f in files)
+        {
+            if (f.IsDirectory) continue;
+            IsLoading = true;
+            try
+            {
+                var tempDir = Path.Combine(Path.GetTempPath(), "SY-FTP");
+                Directory.CreateDirectory(tempDir);
+                var tempPath = Path.Combine(tempDir, f.Name);
+
+                await _ftp.DownloadFileAsync(f.FullPath, tempPath, ct: ct);
+
+                using var watcher = _fileWatcher.StartWatching(tempPath, async _ =>
+                {
+                    await _ftp.UploadFileAsync(tempPath, f.FullPath);
+                });
+
+                Process.Start(new ProcessStartInfo(tempPath) { UseShellExecute = true });
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+    }
+
+
+    public string? ParentPath
+    {
+        get
+        {
+            if (CurrentPath == "/") return null;
+            var trimmed = CurrentPath.TrimEnd('/');
+            var idx = trimmed.LastIndexOf('/');
+            return idx <= 0 ? "/" : trimmed[..idx];
+        }
+    }
+
+    public async Task MoveToFolderAsync(IReadOnlyList<RemoteFile> sources, RemoteFile targetDir, CancellationToken ct)
+        => await MoveFilesToPathAsync(sources, targetDir.FullPath, ct);
+
+    public async Task MoveFilesToPathAsync(IReadOnlyList<RemoteFile> sources, string targetPath, CancellationToken ct)
+    {
         IsLoading = true;
         try
         {
-            var localPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Downloads",
-                file.Name);
-            await _ftp.DownloadFileAsync(file.FullPath, localPath, ct: ct);
+            foreach (var src in sources)
+            {
+                var destPath = $"{targetPath.TrimEnd('/')}/{src.Name}";
+                await _ftp.MoveAsync(src.FullPath, destPath, ct);
+            }
+            await RefreshAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
         }
         finally
         {
@@ -274,8 +510,62 @@ public partial class FileBrowserViewModel : ViewModelBase
     private async Task DeleteAsync(RemoteFile? file, CancellationToken ct)
     {
         if (file is null) return;
-        await _ftp.DeleteFileAsync(file.FullPath, ct);
+        if (file.IsDirectory)
+            await _ftp.DeleteDirectoryAsync(file.FullPath, ct);
+        else
+            await _ftp.DeleteFileAsync(file.FullPath, ct);
         await RefreshAsync(ct);
+    }
+
+    [RelayCommand]
+    private async Task NewFolderAsync(CancellationToken ct)
+    {
+        try
+        {
+            var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+                as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var mainWindow = lifetime?.MainWindow;
+            if (mainWindow is null) return;
+
+            var dlg = new Views.InputDialog { Header = "New Folder", Label = "Folder name" };
+            var result = await dlg.ShowDialog<bool?>(mainWindow);
+            if (result != true) return;
+
+            var name = dlg.Input;
+            await _ftp.CreateDirectoryAsync($"{CurrentPath}/{name}", ct);
+            await RefreshAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task NewFileAsync(CancellationToken ct)
+    {
+        try
+        {
+            var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+                as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var mainWindow = lifetime?.MainWindow;
+            if (mainWindow is null) return;
+
+            var dlg = new Views.InputDialog { Header = "New File", Label = "File name" };
+            var result = await dlg.ShowDialog<bool?>(mainWindow);
+            if (result != true) return;
+
+            var name = dlg.Input;
+            var remotePath = $"{CurrentPath}/{name}";
+            var tempPath = Path.GetTempFileName();
+            await _ftp.UploadFileAsync(tempPath, remotePath, ct: ct);
+            try { File.Delete(tempPath); } catch { }
+            await RefreshAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
     }
 
     [RelayCommand]
@@ -314,19 +604,48 @@ public partial class FileBrowserViewModel : ViewModelBase
         IsLoading = true;
         try
         {
-            foreach (var path in localPaths)
+            var paths = localPaths.ToList();
+            if (paths.Count == 0) return;
+
+            // Detect if all items share the same parent — means a folder was dragged
+            string? commonParent = null;
+            bool hasDirectory = false;
+            foreach (var p in paths)
             {
-                if (File.Exists(path))
+                var parent = Path.GetDirectoryName(p);
+                if (commonParent is null)
+                    commonParent = parent;
+                else if (!string.Equals(commonParent, parent, StringComparison.OrdinalIgnoreCase))
+                {
+                    commonParent = null;
+                    break;
+                }
+                if (Directory.Exists(p)) hasDirectory = true;
+            }
+
+            var remoteTarget = CurrentPath;
+            if (commonParent is not null && hasDirectory)
+            {
+                var folderName = Path.GetFileName(commonParent);
+                remoteTarget = $"{CurrentPath}/{folderName}";
+                await _ftp.CreateDirectoryAsync(remoteTarget, ct);
+            }
+
+            foreach (var path in paths)
+            {
+                if (Directory.Exists(path))
+                    await UploadDirectoryRecursiveAsync(path, remoteTarget, ct);
+                else if (File.Exists(path))
                 {
                     var name = Path.GetFileName(path);
-                    await _ftp.UploadFileAsync(path, $"{CurrentPath}/{name}", ct: ct);
-                }
-                else if (Directory.Exists(path))
-                {
-                    await UploadDirectoryRecursiveAsync(path, CurrentPath, ct);
+                    await _ftp.UploadFileAsync(path, $"{remoteTarget}/{name}", ct: ct);
                 }
             }
             await RefreshAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
         }
         finally
         {
@@ -361,7 +680,14 @@ public partial class FileBrowserViewModel : ViewModelBase
             await _ftp.ChangeDirectoryAsync(path, ct);
             CurrentPath = await _ftp.GetWorkingDirectoryAsync(ct);
             var items = await _ftp.ListDirectoryAsync(CurrentPath, ct);
-            Files = new ObservableCollection<RemoteFile>(items);
+            var list = new List<RemoteFile>();
+            if (CurrentPath != "/")
+            {
+                var parentPath = ParentPath!;
+                list.Add(new RemoteFile("..", parentPath, 0, true, DateTimeOffset.MinValue));
+            }
+            list.AddRange(items);
+            Files = new ObservableCollection<RemoteFile>(list);
             ApplySort();
         }
         catch (Exception ex)
