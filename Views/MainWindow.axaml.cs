@@ -348,7 +348,7 @@ public partial class MainWindow : Window
         if (file is null) return;
         foreach (var item in FileListBox.GetVisualDescendants().OfType<ListBoxItem>())
         {
-            if (item.DataContext == file)
+            if (item.DataContext is RemoteFile f && f.Equals(file))
             {
                 if (on) item.Classes.Add("drop-target");
                 else item.Classes.Remove("drop-target");
@@ -379,16 +379,16 @@ public partial class MainWindow : Window
         if (_rubberBandClearSelection)
         {
             var toRemove = new List<RemoteFile>();
-            foreach (RemoteFile? item in FileListBox.SelectedItems)
+            foreach (var item in FileListBox.SelectedItems?.OfType<RemoteFile>() ?? [])
             {
-                if (item is not null && !rectItems.Contains(item))
+                if (!rectItems.Contains(item))
                     toRemove.Add(item);
             }
             foreach (var item in toRemove)
-                FileListBox.SelectedItems.Remove(item);
+                FileListBox.SelectedItems!.Remove(item);
             foreach (var item in rectItems)
             {
-                if (!FileListBox.SelectedItems.Contains(item))
+                if (!FileListBox.SelectedItems!.Contains(item))
                     FileListBox.SelectedItems.Add(item);
             }
         }
@@ -396,7 +396,7 @@ public partial class MainWindow : Window
         {
             foreach (var item in rectItems)
             {
-                if (!FileListBox.SelectedItems.Contains(item))
+                if (!FileListBox.SelectedItems!.Contains(item))
                     FileListBox.SelectedItems.Add(item);
             }
         }
@@ -408,8 +408,10 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel vm)
         {
-            vm.FileBrowser.SelectedFiles = FileListBox.SelectedItems
-                .OfType<RemoteFile>().ToArray();
+            var selected = FileListBox.SelectedItems;
+            vm.FileBrowser.SelectedFiles = selected is null
+                ? []
+                : selected.OfType<RemoteFile>().ToArray();
         }
     }
 
