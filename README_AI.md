@@ -42,4 +42,5 @@
 - 提交的代码必须使用 async/await，避免任何同步阻塞 IO
 - 不要改变设计 token 名称或引入新的 UI 库
 - 保持 ViewModels 轻量，复杂逻辑放入 Services
+- **遇到不熟悉的技术或无法决定方案时，必须使用 WebSearch / WebFetch 在线搜索最新技术文档和解决方案**，禁止凭过时知识猜测。优先查阅官方文档、当年发布的博客和 Stack Overflow
 

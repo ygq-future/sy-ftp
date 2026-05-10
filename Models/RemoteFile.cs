@@ -5,4 +5,7 @@ public record RemoteFile(
     string FullPath,
     long Size,
     bool IsDirectory,
-    DateTimeOffset LastModified);
+    DateTimeOffset LastModified)
+{
+    public bool IsParentEntry => Name == "..";
+}
