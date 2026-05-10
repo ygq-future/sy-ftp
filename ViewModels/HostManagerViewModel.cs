@@ -42,24 +42,12 @@ public partial class HostManagerViewModel : ViewModelBase
     public IEnumerable<string> AllTagOptions =>
         new[] { AllTagsSentinel }.Concat(DistinctTags);
 
+    public event EventHandler? HostDataChanged;
+
     public HostManagerViewModel()
     {
-        // Default selection: show all hosts
         _filterTag = AllTagsSentinel;
-
-        // Wire up reactivity: whenever Hosts items change, refresh computed properties.
         _hosts.CollectionChanged += OnHostsCollectionChanged;
-
-        // ── Sample host for testing ───────────────────────────────────────────
-        _hosts.Add(new FtpHost
-        {
-            Name = "wsl",
-            Host = "172.23.30.234",
-            Port = 22,
-            Username = "sheepyu",
-            Password = "2003",
-            Tags = "test"
-        });
     }
 
     // ── Collection-change handler ─────────────────────────────────────────────
@@ -106,6 +94,7 @@ public partial class HostManagerViewModel : ViewModelBase
         OnPropertyChanged(nameof(DistinctTags));
         OnPropertyChanged(nameof(AllTagOptions));
         OnPropertyChanged(nameof(FilteredHosts));
+        HostDataChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ── Commands ──────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace sy_ftp.Models;
@@ -24,6 +25,7 @@ public partial class FtpHost : ObservableObject
     [ObservableProperty]
     private string _tags = string.Empty;
 
+    [JsonIgnore]
     public string[] TagList => string.IsNullOrWhiteSpace(Tags)
         ? []
         : Tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);

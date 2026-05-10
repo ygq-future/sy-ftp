@@ -8,6 +8,7 @@ using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using System.Text.Json;
 using Avalonia.Markup.Xaml;
+using sy_ftp.Models;
 using sy_ftp.ViewModels;
 using sy_ftp.Views;
 
@@ -71,6 +72,37 @@ public partial class App : Application
                 _ => "Default"
             };
             File.WriteAllText(ThemeFile, JsonSerializer.Serialize(value));
+        }
+        catch { }
+    }
+
+    private static readonly string ConfigFile = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SY-FTP", "config.json");
+
+    public static AppConfig LoadConfig()
+    {
+        try
+        {
+            if (File.Exists(ConfigFile))
+            {
+                var json = File.ReadAllText(ConfigFile);
+                var config = JsonSerializer.Deserialize<AppConfig>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (config is not null) return config;
+            }
+        }
+        catch { }
+        return new AppConfig();
+    }
+
+    public static void SaveConfig(AppConfig config)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(ConfigFile);
+            if (dir is not null) Directory.CreateDirectory(dir);
+            File.WriteAllText(ConfigFile, JsonSerializer.Serialize(config,
+                new JsonSerializerOptions { WriteIndented = true }));
         }
         catch { }
     }

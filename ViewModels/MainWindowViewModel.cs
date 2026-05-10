@@ -1,3 +1,4 @@
+using System.Linq;
 using Avalonia;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -62,7 +63,29 @@ public partial class MainWindowViewModel : ViewModelBase
         var saved = App.LoadAccentColor();
         _accentColor = saved;
         App.ApplyAccentColor(saved);
+
+        // Load persisted config
+        var config = App.LoadConfig();
+        _isTopmost = config.WindowTopmost;
+        foreach (var host in config.Hosts)
+            HostManager.Hosts.Add(host);
+        if (HostManager.Hosts.Count > 0)
+            HostManager.SelectedHost = HostManager.Hosts[0];
+
+        // Auto-save on host changes
+        HostManager.HostDataChanged += (_, _) => SaveConfig();
     }
+
+    private void SaveConfig()
+    {
+        App.SaveConfig(new AppConfig
+        {
+            Hosts = HostManager.Hosts.ToList(),
+            WindowTopmost = IsTopmost,
+        });
+    }
+
+    partial void OnIsTopmostChanged(bool value) => SaveConfig();
 
     [RelayCommand]
     private void SetAccentColor(AccentColorOption? option)
