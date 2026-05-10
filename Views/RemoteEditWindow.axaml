@@ -1,0 +1,90 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:pia="using:PhosphorIconsAvalonia.Markup"
+        xmlns:ae="using:AvaloniaEdit"
+        x:Class="sy_ftp.Views.RemoteEditWindow"
+        Width="860" Height="620"
+        MinWidth="500" MinHeight="360"
+        WindowDecorations="None"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner"
+        Background="Transparent">
+
+    <Border x:Name="CardBorder"
+            CornerRadius="12" Margin="8"
+            Background="{DynamicResource SemiColorBackground1}"
+            BorderBrush="{DynamicResource SemiColorBorder}"
+            BorderThickness="1"
+            ClipToBounds="True">
+
+        <Grid RowDefinitions="44,*,Auto">
+
+            <!-- Title bar (draggable) -->
+            <Border Grid.Row="0"
+                    Background="Transparent"
+                    PointerPressed="OnTitleBarDrag">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                                VerticalAlignment="Center">
+                        <PathIcon Data="{pia:IconGeometry Icon=file_text, IconType=regular}"
+                                  Width="16" Height="16"
+                                  Foreground="{DynamicResource SemiColorPrimary}" />
+                        <TextBlock x:Name="TitleBlock"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SemiColorText0}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Click="OnCloseClick"
+                            Background="Transparent" BorderThickness="0"
+                            Padding="6" CornerRadius="6"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Close without saving">
+                        <PathIcon Data="{pia:IconGeometry Icon=x, IconType=regular}"
+                                  Width="14" Height="14"
+                                  Foreground="{DynamicResource SemiColorText2}" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Rectangle Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                       Fill="{DynamicResource SemiColorBorder}" />
+
+            <!-- Editor -->
+            <ae:TextEditor x:Name="Editor"
+                           Grid.Row="1"
+                           FontFamily="Consolas,Menlo,Courier New,monospace"
+                           FontSize="13"
+                           ShowLineNumbers="True"
+                           WordWrap="False"
+                           HorizontalScrollBarVisibility="Auto"
+                           VerticalScrollBarVisibility="Auto" />
+
+            <!-- Footer -->
+            <Border Grid.Row="2"
+                    BorderBrush="{DynamicResource SemiColorBorder}"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,10">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock x:Name="LangLabel" Grid.Column="0"
+                               FontSize="11"
+                               Foreground="{DynamicResource SemiColorText3}"
+                               VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <Button Content="Cancel" Click="OnCancelClick"
+                                Background="Transparent"
+                                BorderBrush="{DynamicResource SemiColorBorder}"
+                                BorderThickness="1"
+                                Foreground="{DynamicResource SemiColorText1}"
+                                CornerRadius="6" Padding="14,6" />
+                        <Button Content="Save" Click="OnSaveClick"
+                                Background="{DynamicResource SemiColorPrimary}"
+                                Foreground="White"
+                                BorderThickness="0"
+                                CornerRadius="6" Padding="14,6" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

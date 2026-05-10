@@ -55,6 +55,7 @@
 
     <Application.Styles>
         <semi:SemiTheme />
+        <semi:AvaloniaEditSemiTheme />
         <Style Selector="TextBox:focus /template/ Border">
             <Setter Property="BorderBrush" Value="{DynamicResource SemiColorPrimary}" />
         </Style>

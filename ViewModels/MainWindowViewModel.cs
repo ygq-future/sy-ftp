@@ -103,7 +103,8 @@ public partial class MainWindowViewModel : ViewModelBase
             await _ftp.ConnectAsync(host, ct);
             IsConnected = true;
             StatusText = $"Connected to {host.Name}";
-            await FileBrowser.LoadDirectoryAsync("/", ct);
+            var homeDir = await _ftp.GetWorkingDirectoryAsync(ct);
+            await FileBrowser.LoadDirectoryAsync(homeDir, ct);
         }
         catch (Exception ex)
         {
@@ -118,6 +119,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task DisconnectAsync(CancellationToken ct)
     {
+        FileBrowser.StopAllWatchers();
         await _ftp.DisconnectAsync(ct);
         IsConnected = false;
         StatusText = "Disconnected";

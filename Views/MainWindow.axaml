@@ -950,6 +950,14 @@
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
+                                                <MenuItem Header="Online Edit"
+                                                          Click="OnItemOnlineEditClick"
+                                                          IsVisible="{Binding DataContext.FileBrowser.AllSelectedAreFiles, ElementName=RootWindow}">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=code, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                                 <MenuItem Header="Delete" Click="OnItemDeleteClick">
                                                     <MenuItem.Icon>
                                                         <PathIcon Data="{pia:IconGeometry Icon=trash_simple, IconType=regular}"
@@ -1101,7 +1109,7 @@
                 BorderBrush="{DynamicResource SemiColorBorder}"
                 BorderThickness="1"
                 Padding="14,5" Margin="8,6,8,8">
-            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto">
                 <PathIcon Grid.Column="0"
                           Data="{pia:IconGeometry Icon=circle, IconType=fill}"
                           Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center"
@@ -1142,6 +1150,18 @@
                            FontSize="11" Margin="0,0,2,0" VerticalAlignment="Center"
                            Foreground="{DynamicResource SemiColorText3}"
                            IsVisible="{Binding IsConnected}" />
+                <Separator Grid.Column="5" Width="1" Margin="10,3"
+                           Background="{DynamicResource SemiColorBorder}"
+                           IsVisible="{Binding FileBrowser.LastSyncTime, Converter={StaticResource NotNullOrEmptyConverter}}" />
+                <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
+                            IsVisible="{Binding FileBrowser.LastSyncTime, Converter={StaticResource NotNullOrEmptyConverter}}">
+                    <PathIcon Data="{pia:IconGeometry Icon=arrow_counter_clockwise, IconType=regular}"
+                              Width="11" Height="11"
+                              Foreground="{DynamicResource SemiColorSuccess}" />
+                    <TextBlock Text="{Binding FileBrowser.LastSyncTime, StringFormat='Synced {0}'}"
+                               FontSize="11" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SemiColorSuccess}" />
+                </StackPanel>
             </Grid>
         </Border>
 

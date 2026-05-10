@@ -441,6 +441,39 @@ public partial class MainWindow : Window
         vm.FileBrowser.EditSelectedCommand.Execute(null);
     }
 
+    private async void OnItemOnlineEditClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+        var file = vm.FileBrowser.SelectedFile;
+        if (file is not { IsDirectory: false }) return;
+
+        var tempPath = Path.Combine(Path.GetTempPath(), "SY-FTP", file.Name);
+        Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!);
+
+        vm.FileBrowser.IsLoading = true;
+        try
+        {
+            await vm.FileBrowser.FtpService.DownloadFileAsync(file.FullPath, tempPath);
+            var content = await File.ReadAllTextAsync(tempPath);
+
+            var win = new RemoteEditWindow();
+            win.Load(file.Name, content);
+            var result = await win.ShowDialog<string?>(this);
+
+            if (result is not null)
+            {
+                await File.WriteAllTextAsync(tempPath, result);
+                await vm.FileBrowser.FtpService.UploadFileAsync(tempPath, file.FullPath);
+                vm.FileBrowser.LastSyncTime = DateTime.Now.ToString("HH:mm:ss");
+                vm.FileBrowser.RefreshCommand.Execute(null);
+            }
+        }
+        finally
+        {
+            vm.FileBrowser.IsLoading = false;
+        }
+    }
+
     private void OnItemDeleteClick(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel vm) return;
