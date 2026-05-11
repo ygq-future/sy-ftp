@@ -57,14 +57,14 @@
 
 ## P2 — 文件传输
 
-### 6. 拖拽上传 (Drag & Drop)
+### 6. 拖拽上传 (Drag & Drop) — DONE
 - `DragDropHelper` 提取本地文件路径
 - 支持多文件 / 文件夹递归上传
 - `UploadViaDragDropAsync` → 单文件上传 → 目录递归创建 + 上传
 - 上传进度可见；不阻塞 UI（async/await）
 - 验收：从系统资源管理器拖拽文件/文件夹到窗口即可上传，上传后自动刷新列表
 
-### 7. 文件下载
+### 7. 文件下载 — DONE
 - 右键菜单触发下载
 - 弹出保存路径选择对话框
 - 显示下载进度
@@ -72,7 +72,7 @@
 
 ## P3 — 远程编辑（关键特性）
 
-### 8. 远程编辑完整实现
+### 8. 远程编辑完整实现 — DONE
 - 右键远程文件 → 下载到 `%TEMP%/SY-FTP/` → 调用系统默认编辑器打开
 - `FileWatcherService` 监听临时文件变更（500ms 防抖）→ 保存后自动上传覆盖
 - 状态栏显示最后同步时间
@@ -80,26 +80,36 @@
 
 ## P4 — 体验与持久化
 
-### 9. 窗口置顶开关
+### 9. 窗口置顶开关 — DONE
 - 工具栏 Topmost 切换按钮（`icon-toggle` 样式），图标高亮表示置顶状态
 - 验收：一键开关，窗口始终在最上层或恢复正常
 
-### 10. 应用配置持久化（AppConfig）
+### 10. 应用配置持久化（AppConfig） — DONE
 - 持久化内容：主机列表、窗口位置/大小、主题选择、置顶状态
 - 保存位置：`%LocalAppData%/SY-FTP/`
 - 验收：重启应用后恢复上次的主机列表和界面状态
 
 ## P5 — 健壮性与错误处理
 
-### 11. 异常处理与用户提示
-- 连接失败 / 超时 / 传输失败弹出友好错误对话框，不崩溃
+### 11. 异常处理与用户提示 — DONE
+- 连接失败 / 超时 / 传输失败通过 `ErrorMessage` 浮层（2 秒自动消失）展示，不崩溃
+- `FileBrowserViewModel.EditRemoteAsync`、`MainWindow.OnItemOnlineEditClick` 增加 catch-all，统一写入 `ErrorMessage`
 - 空目录 / 无权限等边缘情况的用户提示
 - 验收：各种异常场景均有提示且应用不闪退
 
-### 12. 单元验证（手动测试清单）
+### 12. 单元验证（手动测试清单） — DONE
 - 端到端测试流程：连接 → 列文件 → 下载 → 远程编辑 → 上传
 - 交叉验证 SFTP（端口 22）和 FTP（其他端口）两种后端
 - 验收：完整走通一次端到端流程，无异常
+
+### 13. 跨平台兼容性（Windows / Linux / macOS） — DONE
+- `Program.cs`：`Win32PlatformOptions` 仅在 `OperatingSystem.IsWindows()` 下应用，避免 Linux/macOS 启动异常
+- `FtpPathHelper`：Windows 使用 `SHGetKnownFolderPath`（P/Invoke 已 guard），其他平台 fallback 到 `~/Downloads`
+- 等宽字体：`Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace` 多候选，覆盖三平台
+- `Process.Start { UseShellExecute = true }` 在三平台均可调默认编辑器（Windows: ShellExecute；Linux: xdg-open；macOS: open）
+- `Environment.SpecialFolder.LocalApplicationData` 三平台均映射到合理目录：Windows `%LocalAppData%`、Linux `~/.local/share`、macOS `~/Library/Application Support`
+- `FileSystemWatcher`、`Path.Combine`、`Directory.*`、`File.*` 为 .NET 标准库跨平台 API
+- 验收：代码中所有平台特定 API 均已 guard 或使用跨平台 fallback
 
 ## 技术要点
 
