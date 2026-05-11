@@ -4,7 +4,7 @@
         xmlns:pia="using:PhosphorIconsAvalonia.Markup"
         x:Class="sy_ftp.Views.HostEditWindow"
         x:DataType="models:FtpHost"
-        Width="400" Height="480"
+        Width="400" Height="470"
         Title="Host"
         WindowDecorations="None"
         CanResize="False"
@@ -15,17 +15,80 @@
         <models:FtpHost Name="My Server" Host="ftp.example.com"/>
     </Design.DataContext>
 
+    <Window.Styles>
+        <!-- Dialog card entry animation: fade + slight scale-up -->
+        <Style Selector="Border.dialog-card">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+            <Style.Animations>
+                <Animation Duration="0:0:0.22" Easing="CubicEaseOut" FillMode="Forward">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.94" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.94" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.0" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.0" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <!-- Primary save button — matches RemoteEditWindow -->
+        <Style Selector="Button.dialog-btn-primary /template/ ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.dialog-btn-primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryPointerover}" />
+        </Style>
+        <Style Selector="Button.dialog-btn-primary:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryActive}" />
+        </Style>
+
+        <!-- Outline cancel button — matches RemoteEditWindow -->
+        <Style Selector="Button.dialog-btn-outline /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1Start}" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.dialog-btn-outline:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <Style Selector="Button.dialog-btn-outline:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill2}" />
+        </Style>
+
+        <!-- Field-level error hint: fade in -->
+        <Style Selector="TextBlock.field-error">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Margin" Value="2,2,0,0" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorDanger}" />
+        </Style>
+    </Window.Styles>
+
     <!-- Margin gives the BoxShadow room to render beyond the card -->
     <Border x:Name="CardBorder"
+            Classes="dialog-card"
             CornerRadius="12" Margin="8" Padding="24"
             Background="{DynamicResource SemiColorBackground1}"
             BorderBrush="{DynamicResource SemiColorBorder}"
             BorderThickness="1"
             PointerPressed="OnCardDrag">
+        <Border.RenderTransform>
+            <ScaleTransform ScaleX="1" ScaleY="1" />
+        </Border.RenderTransform>
         <Grid RowDefinitions="Auto,*,Auto">
 
             <!-- Header — drag area -->
-            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,16">
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,14">
                 <PathIcon Data="{pia:IconGeometry Icon=desktop, IconType=regular}"
                           Width="22" Height="22"
                           Foreground="{DynamicResource SemiColorPrimary}" />
@@ -35,26 +98,36 @@
             </StackPanel>
 
             <!-- Form -->
-            <StackPanel Grid.Row="1" Spacing="10">
+            <StackPanel Grid.Row="1" Spacing="8">
 
-                <StackPanel Spacing="4">
+                <StackPanel Spacing="2">
                     <TextBlock Text="Name" FontSize="12"
                                Foreground="{DynamicResource SemiColorText2}" />
-                    <TextBox Text="{Binding Name, Mode=TwoWay}"
+                    <TextBox x:Name="NameBox"
+                             Text="{Binding Name, Mode=TwoWay}"
                              PlaceholderText="My FTP Server"
                              Background="{DynamicResource SemiColorFill0}"
                              BorderBrush="{DynamicResource SemiColorBorder}"
                              CornerRadius="6" Padding="10,7" />
+                    <TextBlock x:Name="NameError"
+                               Classes="field-error"
+                               IsVisible="False"
+                               Text="Name is required" />
                 </StackPanel>
 
-                <StackPanel Spacing="4">
+                <StackPanel Spacing="2">
                     <TextBlock Text="Host" FontSize="12"
                                Foreground="{DynamicResource SemiColorText2}" />
-                    <TextBox Text="{Binding Host, Mode=TwoWay}"
+                    <TextBox x:Name="HostBox"
+                             Text="{Binding Host, Mode=TwoWay}"
                              PlaceholderText="ftp.example.com"
                              Background="{DynamicResource SemiColorFill0}"
                              BorderBrush="{DynamicResource SemiColorBorder}"
                              CornerRadius="6" Padding="10,7" />
+                    <TextBlock x:Name="HostError"
+                               Classes="field-error"
+                               IsVisible="False"
+                               Text="Host address is required" />
                 </StackPanel>
 
                 <Grid ColumnDefinitions="100,*,*">
@@ -97,37 +170,24 @@
                              BorderBrush="{DynamicResource SemiColorBorder}"
                              CornerRadius="6" Padding="10,7" />
                 </StackPanel>
-
-                <!-- Inline validation error -->
-                <Border x:Name="ErrorBorder"
-                        IsVisible="False"
-                        Background="{DynamicResource SemiColorDangerLight}"
-                        CornerRadius="6" Padding="10,7">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{pia:IconGeometry Icon=warning_circle, IconType=regular}"
-                                  Width="14" Height="14"
-                                  Foreground="{DynamicResource SemiColorDanger}" />
-                        <TextBlock x:Name="ErrorText"
-                                   Foreground="{DynamicResource SemiColorDanger}"
-                                   FontSize="12" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Border>
             </StackPanel>
 
-            <!-- Buttons -->
+            <!-- Buttons — unified with RemoteEditWindow -->
             <StackPanel Grid.Row="2" Orientation="Horizontal"
-                        HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+                        HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
                 <Button Content="Cancel" Click="Cancel_Click"
+                        Classes="dialog-btn-outline"
                         Background="Transparent"
-                        BorderBrush="{DynamicResource SemiColorPrimary}"
-                        Foreground="{DynamicResource SemiColorPrimary}"
+                        BorderBrush="{DynamicResource SemiColorBorder}"
                         BorderThickness="1"
-                        CornerRadius="6" Padding="12,6" />
+                        Foreground="{DynamicResource SemiColorText1}"
+                        CornerRadius="6" Padding="14,6" />
                 <Button Content="Save" Click="Ok_Click"
+                        Classes="dialog-btn-primary"
                         Background="{DynamicResource SemiColorPrimary}"
                         Foreground="White"
                         BorderThickness="0"
-                        CornerRadius="6" Padding="12,6" />
+                        CornerRadius="6" Padding="14,6" />
             </StackPanel>
 
         </Grid>

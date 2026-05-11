@@ -25,6 +25,11 @@ public partial class FtpHost : ObservableObject
     [ObservableProperty]
     private string _tags = string.Empty;
 
+    /// <summary>Runtime-only connection indicator. Not persisted.</summary>
+    [ObservableProperty]
+    [property: JsonIgnore]
+    private bool _isConnected;
+
     [JsonIgnore]
     public string[] TagList => string.IsNullOrWhiteSpace(Tags)
         ? []

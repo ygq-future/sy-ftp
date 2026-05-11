@@ -10,16 +10,24 @@ sealed class Program
         .StartWithClassicDesktopLifetime(args);
 
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-            .With(new Win32PlatformOptions
+    {
+        var builder = AppBuilder.Configure<App>()
+            .UsePlatformDetect();
+
+        if (OperatingSystem.IsWindows())
+        {
+            builder = builder.With(new Win32PlatformOptions
             {
                 CompositionMode = [Win32CompositionMode.WinUIComposition],
                 RenderingMode = [Win32RenderingMode.AngleEgl]
-            })
+            });
+        }
+
 #if DEBUG
-            .WithDeveloperTools()
+        builder = builder.WithDeveloperTools();
 #endif
+        return builder
             .WithInterFont()
             .LogToTrace();
+    }
 }

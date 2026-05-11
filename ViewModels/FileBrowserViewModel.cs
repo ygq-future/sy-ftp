@@ -15,10 +15,38 @@ public enum FileSortColumn { Name, Size, LastModified }
 
 public partial class FileBrowserViewModel : ViewModelBase
 {
-    private readonly IFtpService _ftp;
+    private IFtpService _ftp;
     private readonly IFileWatcherService _fileWatcher;
+    private HostSession? _activeSession;
 
     public IFtpService FtpService => _ftp;
+    public HostSession? ActiveSession => _activeSession;
+
+    /// <summary>Swap to a different host's live session, or null to clear.</summary>
+    public async Task ActivateSessionAsync(HostSession? session, CancellationToken ct)
+    {
+        if (ReferenceEquals(_activeSession, session)) return;
+
+        // Remember current path for outgoing session
+        if (_activeSession is not null)
+            _activeSession.CurrentPath = CurrentPath;
+
+        _activeSession = session;
+
+        if (session is null)
+        {
+            // No active connection — clear UI
+            _ftp = new FtpService();
+            Files.Clear();
+            CurrentPath = "/";
+            ErrorMessage = "";
+            LastSyncTime = "";
+            return;
+        }
+
+        _ftp = session.Ftp;
+        await LoadDirectoryAsync(session.CurrentPath, ct);
+    }
 
     [ObservableProperty]
     private ObservableCollection<RemoteFile> _files = [];
@@ -427,6 +455,18 @@ public partial class FileBrowserViewModel : ViewModelBase
     {
         var files = SelectedFiles.Where(f => !f.IsParentEntry).ToList();
         if (files.Count == 0) return;
+
+        var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = lifetime?.MainWindow;
+        if (mainWindow is null) return;
+
+        string message = files.Count == 1
+            ? $"Delete \"{files[0].Name}\"? This cannot be undone."
+            : $"Delete {files.Count} items? This cannot be undone.";
+        var confirmed = await Views.ConfirmDialog.ShowAsync(mainWindow, "Confirm delete", message);
+        if (!confirmed) return;
+
         try
         {
             foreach (var f in files)
@@ -497,11 +537,28 @@ public partial class FileBrowserViewModel : ViewModelBase
     private async Task DeleteAsync(RemoteFile? file, CancellationToken ct)
     {
         if (file is null) return;
-        if (file.IsDirectory)
-            await _ftp.DeleteDirectoryAsync(file.FullPath, ct);
-        else
-            await _ftp.DeleteFileAsync(file.FullPath, ct);
-        await RefreshAsync(ct);
+
+        var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = lifetime?.MainWindow;
+        if (mainWindow is null) return;
+
+        var message = $"Delete \"{file.Name}\"? This cannot be undone.";
+        var confirmed = await Views.ConfirmDialog.ShowAsync(mainWindow, "Confirm delete", message);
+        if (!confirmed) return;
+
+        try
+        {
+            if (file.IsDirectory)
+                await _ftp.DeleteDirectoryAsync(file.FullPath, ct);
+            else
+                await _ftp.DeleteFileAsync(file.FullPath, ct);
+            await RefreshAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
     }
 
     [RelayCommand]
@@ -616,6 +673,10 @@ public partial class FileBrowserViewModel : ViewModelBase
             Process.Start(new ProcessStartInfo(tempPath) { UseShellExecute = true });
         }
         catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Remote edit failed: {ex.Message}";
+        }
         finally
         {
             IsLoading = false;

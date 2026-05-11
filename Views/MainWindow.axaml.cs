@@ -212,6 +212,11 @@ public partial class MainWindow : Window
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
         if (DataContext is not MainWindowViewModel vm || !vm.IsConnected) return;
 
+        // Ignore presses that originate inside the scrollbar — otherwise dragging
+        // the scroll thumb would start a rubber-band selection.
+        if (e.Source is Visual src && src.FindAncestorOfType<ScrollBar>() is not null)
+            return;
+
         var file = ResolveRemoteFile(e.Source);
         if (file is null)
         {
@@ -470,6 +475,10 @@ public partial class MainWindow : Window
                 vm.FileBrowser.RefreshCommand.Execute(null);
             }
         }
+        catch (Exception ex)
+        {
+            vm.FileBrowser.ErrorMessage = $"Online edit failed: {ex.Message}";
+        }
         finally
         {
             vm.FileBrowser.IsLoading = false;
@@ -481,6 +490,32 @@ public partial class MainWindow : Window
         if (DataContext is not MainWindowViewModel vm) return;
         SyncSelectedFilesToViewModel();
         vm.FileBrowser.DeleteSelectedCommand.Execute(null);
+    }
+
+    private async void OnItemTransferToClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        SyncSelectedFilesToViewModel();
+        var sources = vm.FileBrowser.SelectedFiles
+            .Where(f => !f.IsParentEntry)
+            .ToList();
+        if (sources.Count == 0) return;
+
+        var sourceFtp = vm.FileBrowser.FtpService;
+        if (sourceFtp is null || !sourceFtp.IsConnected)
+        {
+            vm.FileBrowser.ErrorMessage = "Source host is not connected.";
+            return;
+        }
+
+        var dlg = new sy_ftp.Views.TransferBrowserDialog();
+        dlg.Configure(vm, sourceFtp, sources);
+        await dlg.ShowDialog(this);
+
+        // After the panel closes, refresh if we're still looking at a host that may have changed
+        if (vm.FileBrowser.ActiveSession is not null)
+            await vm.FileBrowser.RefreshCommand.ExecuteAsync(null);
     }
 
     private static RemoteFile? ResolveRemoteFile(object? source)

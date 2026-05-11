@@ -11,7 +11,7 @@
         x:Class="sy_ftp.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:Name="RootWindow"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/sy-ftp.ico"
         Title="SY-FTP"
         Topmost="{Binding IsTopmost}"
         Width="900" Height="560"
@@ -30,9 +30,17 @@
         <conv:NotNullOrEmptyConverter x:Key="NotNullOrEmptyConverter" />
         <conv:StringToOpacityConverter x:Key="StringToOpacity" />
         <conv:BoolToOpacityConverter x:Key="BoolToOpacity" />
+        <conv:FileIconGeometryConverter x:Key="FileIconGeometry" />
+        <conv:FileIconBrushConverter x:Key="FileIconBrush" />
     </Window.Resources>
 
     <Window.Styles>
+
+        <!-- ── Global ToolTip delay: prevents strobing when moving between buttons ── -->
+        <Style Selector=":is(Control)">
+            <Setter Property="ToolTip.ShowDelay" Value="550" />
+            <Setter Property="ToolTip.BetweenShowDelay" Value="0" />
+        </Style>
 
         <!-- ── Icon-only ToggleButton: suppress all checked/hover background ── -->
         <Style Selector="ToggleButton.icon-toggle">
@@ -50,10 +58,10 @@
             <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="ToggleButton.icon-toggle /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1Start}" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter>
         </Style>
@@ -61,7 +69,7 @@
             <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
         </Style>
         <Style Selector="ToggleButton.icon-toggle:checked /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1Start}" />
         </Style>
         <Style Selector="ToggleButton.icon-toggle:checked:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
@@ -85,10 +93,10 @@
         </Style>
         <Style Selector="Button.accent-text /template/ ContentPresenter">
             <Setter Property="Foreground" Value="{DynamicResource SemiColorPrimary}" />
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightStart}" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter>
         </Style>
@@ -102,7 +110,7 @@
         </Style>
         <Style Selector="Button.accent-text:disabled /template/ ContentPresenter">
             <Setter Property="Foreground" Value="{DynamicResource SemiColorPrimaryDisabled}" />
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightStart}" />
         </Style>
 
         <!-- ── Sidebar Add button ── -->
@@ -116,7 +124,7 @@
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter>
         </Style>
@@ -138,7 +146,7 @@
             <Setter Property="Background" Value="{DynamicResource SemiColorDangerLight}" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter>
         </Style>
@@ -165,10 +173,10 @@
             <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="Button.wnd-btn /template/ ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1Start}" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter>
         </Style>
@@ -231,19 +239,72 @@
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightPointerover}" />
         </Style>
 
+        <!-- ── Accent color swatch: radial glow halo on hover ── -->
+        <!-- Suppress Semi theme's gray overlay on the Button root -->
+        <Style Selector="Button.accent-swatch /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="Button.accent-swatch:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.accent-swatch:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <!-- Halo: BoxShadow on inner Border expands on hover -->
+        <Style Selector="Border.swatch-halo">
+            <Setter Property="BoxShadow" Value="0 0 0 0 Transparent" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.22" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.accent-swatch:pointerover Border.swatch-halo">
+            <Setter Property="BoxShadow" Value="0 0 12 3 #66FFFFFF" />
+        </Style>
+        <Style Selector="Button.accent-swatch:pressed Border.swatch-halo">
+            <Setter Property="BoxShadow" Value="0 0 6 1 #66FFFFFF" />
+        </Style>
+
         <!-- ── ComboBox dropdown: rounded popup + rounded items ── -->
         <Style Selector="ComboBox#TagComboBox /template/ Popup Border">
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Margin" Value="0,4,0,0" />
             <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
             <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Style.Animations>
+                <Animation Duration="0:0:0.2" Easing="CubicEaseOut" FillMode="Forward">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.0" />
+                        <Setter Property="TranslateTransform.Y" Value="-6" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0" />
+                        <Setter Property="TranslateTransform.Y" Value="0" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
         </Style>
-        <!-- Arrow rotation animation -->
-        <Style Selector="ComboBox#TagComboBox /template/ ToggleButton PathIcon">
+        <!-- Arrow rotation animation: match Path OR PathIcon so works with any Semi theme version -->
+        <Style Selector="ComboBox#TagComboBox /template/ ToggleButton Path">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%" />
             <Setter Property="RenderTransform" Value="rotate(0deg)" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.22" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="ComboBox#TagComboBox:dropdownopen /template/ ToggleButton Path">
+            <Setter Property="RenderTransform" Value="rotate(180deg)" />
+        </Style>
+        <Style Selector="ComboBox#TagComboBox /template/ ToggleButton PathIcon">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+            <Setter Property="RenderTransform" Value="rotate(0deg)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.22" Easing="CubicEaseOut" />
                 </Transitions>
             </Setter>
         </Style>
@@ -255,15 +316,24 @@
             <Setter Property="Margin" Value="4,2" />
             <Setter Property="Padding" Value="8,5" />
         </Style>
+        <!-- Instant hover switch: no transition, eliminates any intermediate white flash -->
         <Style Selector="ComboBox#TagComboBox ComboBoxItem /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Transitions">
+                <Transitions />
+            </Setter>
+        </Style>
+        <Style Selector="ComboBox#TagComboBox ComboBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
         </Style>
         <Style Selector="ComboBox#TagComboBox ComboBoxItem:selected /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimary}" />
             <Setter Property="Foreground" Value="White" />
         </Style>
-        <Style Selector="ComboBox#TagComboBox ComboBoxItem:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        <Style Selector="ComboBox#TagComboBox ComboBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryPointerover}" />
+            <Setter Property="Foreground" Value="White" />
         </Style>
 
         <!-- ── Context menu ── -->
@@ -274,6 +344,24 @@
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
         </Style>
+        <!-- MenuItem submenu popup: same chrome as ContextMenu popup -->
+        <Style Selector="MenuItem /template/ Popup#PART_Popup Border">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
+        </Style>
+        <Style Selector="MenuItem /template/ Popup Border">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
+        </Style>
+        <Style Selector="MenuItem /template/ ScrollViewer">
+            <Setter Property="Padding" Value="4" />
+        </Style>
         <Style Selector="ContextMenu">
             <Setter Property="Padding" Value="4" />
         </Style>
@@ -281,23 +369,35 @@
             <Setter Property="Margin" Value="8,4" />
             <Setter Property="Background" Value="{DynamicResource SemiColorBorder}" />
         </Style>
-        <Style Selector="ContextMenu MenuItem">
+        <!-- Applies to both ContextMenu items AND submenu items (submenus live in their own popup) -->
+        <Style Selector="MenuItem">
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Margin" Value="2" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Padding" Value="8,4" />
         </Style>
-        <Style Selector="ContextMenu MenuItem PathIcon">
+        <!-- Instant hover switch: no transition, eliminates any intermediate white flash -->
+        <Style Selector="MenuItem /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Transitions">
+                <Transitions />
+            </Setter>
+        </Style>
+        <Style Selector="MenuItem:pointerover /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="MenuItem:selected /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="MenuItem PathIcon">
             <Setter Property="Width" Value="12" />
             <Setter Property="Height" Value="12" />
         </Style>
-        <Style Selector="ContextMenu MenuItem:selected /template/ Border">
-            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
-            <Setter Property="CornerRadius" Value="6" />
-        </Style>
-        <Style Selector="ContextMenu MenuItem:pointerover /template/ Border">
-            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
-            <Setter Property="CornerRadius" Value="6" />
+        <!-- Separators inside submenu popups need the same styling -->
+        <Style Selector="MenuItem Separator">
+            <Setter Property="Margin" Value="8,4" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorBorder}" />
         </Style>
 
         <!-- ── File ListBoxItem: accent hover & selection ── -->
@@ -367,11 +467,11 @@
             <Setter Property="CornerRadius" Value="6" />
         </Style>
         <Style Selector="ListBox.overflow-flyout ListBoxItem /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightStart}" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.1" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter>
         </Style>
@@ -411,8 +511,14 @@
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <PathIcon Data="{pia:IconGeometry Icon=plug, IconType=fill}"
                                   Width="14" Height="14" />
-                        <TextBlock Text="Connect" VerticalAlignment="Center"
-                                   FontSize="12" FontWeight="Medium" />
+                        <TextBlock VerticalAlignment="Center"
+                                   FontSize="12" FontWeight="Medium"
+                                   Text="Connecting…"
+                                   IsVisible="{Binding IsBusy}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   FontSize="12" FontWeight="Medium"
+                                   Text="Connect"
+                                   IsVisible="{Binding IsBusy, Converter={StaticResource BoolInverter}}" />
                     </StackPanel>
                 </Button>
 
@@ -677,18 +783,26 @@
                                         Background="{DynamicResource SemiColorFill0}"
                                         BorderBrush="{DynamicResource SemiColorBorder}"
                                         BorderThickness="1">
-                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
-                                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto">
+                                        <!-- Connected indicator: small green dot -->
+                                        <Ellipse Grid.Row="0" Grid.Column="0"
+                                                 Width="7" Height="7"
+                                                 VerticalAlignment="Center"
+                                                 Margin="0,0,6,0"
+                                                 Fill="{DynamicResource SemiColorSuccess}"
+                                                 IsVisible="{Binding IsConnected}"
+                                                 ToolTip.Tip="Connected" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
                                                    Text="{Binding Name}"
                                                    FontWeight="Medium" FontSize="13"
                                                    Foreground="{DynamicResource SemiColorText0}"
                                                    TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
                                                    Text="{Binding Host}"
                                                    FontSize="11" Margin="0,2,0,0"
                                                    Foreground="{DynamicResource SemiColorText2}"
                                                    TextTrimming="CharacterEllipsis" />
-                                        <Border Grid.Row="1" Grid.Column="1"
+                                        <Border Grid.Row="1" Grid.Column="2"
                                                 IsVisible="{Binding Tags, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                                 Background="{DynamicResource SemiColorPrimaryLight}"
                                                 CornerRadius="4" Padding="5,2" Margin="6,2,0,0">
@@ -725,17 +839,24 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="models:AccentColorOption"
                                                   x:CompileBindings="False">
-                                        <Button Command="{Binding DataContext.SetAccentColorCommand, ElementName=RootWindow}"
+                                        <Button Classes="accent-swatch"
+                                                Command="{Binding DataContext.SetAccentColorCommand, ElementName=RootWindow}"
                                                 CommandParameter="{Binding}"
-                                                Width="20" Height="20"
-                                                Padding="0" Margin="2"
-                                                CornerRadius="10"
+                                                Width="24" Height="24"
+                                                Padding="0" Margin="0"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                CornerRadius="12"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
-                                                Background="{Binding Hex, Converter={StaticResource HexToBrush}}"
-                                                BorderBrush="{DynamicResource SemiColorBorder}"
-                                                BorderThickness="1"
-                                                ToolTip.Tip="{Binding Name}" />
+                                                ToolTip.Tip="{Binding Name}">
+                                            <Border Classes="swatch-halo"
+                                                    Width="20" Height="20"
+                                                    CornerRadius="10"
+                                                    Background="{Binding Hex, Converter={StaticResource HexToBrush}}"
+                                                    BorderBrush="{DynamicResource SemiColorBorder}"
+                                                    BorderThickness="1" />
+                                        </Button>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -883,7 +1004,7 @@
                                               VerticalAlignment="Center" />
                                     <TextBox Text="{Binding FileBrowser.EditPathText}"
                                              x:Name="PathEditBox"
-                                             FontFamily="Consolas" FontSize="12"
+                                             FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" FontSize="12"
                                              Width="400"
                                              KeyDown="OnPathEditKeyDown" />
                                     <Button Classes="accent-text" Padding="4,2"
@@ -1102,6 +1223,13 @@
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
+                                                <MenuItem Header="Transfer to…"
+                                                          Click="OnItemTransferToClick">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{pia:IconGeometry Icon=arrow_fat_right, IconType=regular}"
+                                                                  Width="14" Height="14" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                                 <MenuItem Header="Delete" Click="OnItemDeleteClick">
                                                     <MenuItem.Icon>
                                                         <PathIcon Data="{pia:IconGeometry Icon=trash_simple, IconType=regular}"
@@ -1156,14 +1284,14 @@
                                                        IsVisible="{Binding IsParentEntry}" />
                                             <!-- Normal entries -->
                                             <PathIcon Grid.Column="0"
-                                                      Data="{pia:IconGeometry Icon=folder_simple, IconType=regular}"
+                                                      Data="{pia:IconGeometry Icon=folder, IconType=fill}"
                                                       Width="18" Height="18" Margin="0,0,10,0"
                                                       Foreground="{DynamicResource SemiColorPrimary}"
                                                       IsVisible="{Binding IsDirectory}" />
                                             <PathIcon Grid.Column="0"
-                                                      Data="{pia:IconGeometry Icon=file, IconType=regular}"
+                                                      Data="{Binding Name, Converter={StaticResource FileIconGeometry}}"
                                                       Width="18" Height="18" Margin="0,0,10,0"
-                                                      Foreground="{DynamicResource SemiColorText2}"
+                                                      Foreground="{Binding Name, Converter={StaticResource FileIconBrush}}"
                                                       IsVisible="{Binding IsDirectory, Converter={StaticResource BoolInverter}}" />
                                             <TextBlock Grid.Column="1" Text="{Binding Name}"
                                                        FontSize="13" VerticalAlignment="Center"
@@ -1285,9 +1413,9 @@
                 <TextBlock Grid.Column="1" Text="{Binding StatusText}"
                            FontSize="12" Foreground="{DynamicResource SemiColorText1}"
                            VerticalAlignment="Center" />
-                <!-- Indeterminate: directory loading -->
+                <!-- Indeterminate: connecting / directory loading -->
                 <ProgressBar Grid.Column="2"
-                             Opacity="{Binding FileBrowser.IsLoading, Converter={StaticResource BoolToOpacity}}"
+                             Opacity="{Binding IsStatusLoading, Converter={StaticResource BoolToOpacity}}"
                              IsHitTestVisible="False"
                              IsIndeterminate="True" Width="90" Height="4" Margin="10,0"
                              Foreground="{DynamicResource SemiColorPrimary}">

@@ -17,7 +17,17 @@ namespace sy_ftp.Views
             InitializeComponent();
             ApplyShadow();
             ActualThemeVariantChanged += (_, _) => ApplyShadow();
-            WireTextBoxFocus();
+
+            NameBox.TextChanged += (_, _) =>
+            {
+                if (!string.IsNullOrWhiteSpace(NameBox.Text))
+                    SetFieldError(NameBox, NameError, false);
+            };
+            HostBox.TextChanged += (_, _) =>
+            {
+                if (!string.IsNullOrWhiteSpace(HostBox.Text))
+                    SetFieldError(HostBox, HostError, false);
+            };
         }
 
         private void ApplyShadow()
@@ -29,29 +39,16 @@ namespace sy_ftp.Views
                 : BoxShadows.Parse("0 0 16 0 #0C000000");
         }
 
-        private void WireTextBoxFocus()
+        private static void SetFieldError(TextBox box, TextBlock errorBlock, bool hasError)
         {
-            var app = Application.Current;
-            if (app is null) return;
-
-            foreach (var tb in this.GetVisualDescendants().OfType<TextBox>())
+            errorBlock.IsVisible = hasError;
+            if (hasError)
             {
-                IBrush? defaultBrush = null;
-                tb.GotFocus += (_, _) =>
-                {
-                    var border = tb.GetVisualDescendants().OfType<Border>().FirstOrDefault();
-                    if (border is null) return;
-                    defaultBrush ??= border.BorderBrush;
-                    if (app.TryGetResource("SemiColorPrimary", app.ActualThemeVariant, out var brush))
-                        border.BorderBrush = (IBrush)brush!;
-                };
-                tb.LostFocus += (_, _) =>
-                {
-                    if (defaultBrush is null) return;
-                    var border = tb.GetVisualDescendants().OfType<Border>().FirstOrDefault();
-                    if (border is not null)
-                        border.BorderBrush = defaultBrush;
-                };
+                if (!box.Classes.Contains("error")) box.Classes.Add("error");
+            }
+            else
+            {
+                box.Classes.Remove("error");
             }
         }
 
@@ -59,30 +56,28 @@ namespace sy_ftp.Views
         {
             if (DataContext is not FtpHost host) return;
 
-            if (string.IsNullOrWhiteSpace(host.Name))
+            var nameBad = string.IsNullOrWhiteSpace(host.Name);
+            var hostBad = string.IsNullOrWhiteSpace(host.Host);
+            SetFieldError(NameBox, NameError, nameBad);
+            SetFieldError(HostBox, HostError, hostBad);
+
+            if (nameBad)
             {
-                ShowError("Name is required.");
+                NameBox.Focus();
                 return;
             }
-            if (string.IsNullOrWhiteSpace(host.Host))
+            if (hostBad)
             {
-                ShowError("Host address is required.");
+                HostBox.Focus();
                 return;
             }
 
-            ErrorBorder.IsVisible = false;
             Close(true);
         }
 
         private void Cancel_Click(object? sender, RoutedEventArgs e)
         {
             Close(false);
-        }
-
-        private void ShowError(string message)
-        {
-            ErrorText.Text = message;
-            ErrorBorder.IsVisible = true;
         }
 
         private void OnCardDrag(object? sender, PointerPressedEventArgs e)

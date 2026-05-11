@@ -1,15 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:pia="using:PhosphorIconsAvalonia.Markup"
-        x:Class="sy_ftp.Views.InputDialog"
-        Width="360" MinHeight="200" SizeToContent="Height"
+        x:Class="sy_ftp.Views.ConfirmDialog"
+        Width="380" MinHeight="170" SizeToContent="Height"
         WindowDecorations="None"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         Background="Transparent">
 
     <Window.Styles>
-        <!-- Dialog card entry animation: fade + slight scale-up -->
         <Style Selector="Border.dialog-card">
             <Setter Property="RenderTransformOrigin" Value="50%,50%" />
             <Style.Animations>
@@ -28,19 +27,18 @@
             </Style.Animations>
         </Style>
 
-        <!-- Dialog buttons: smooth hover transitions -->
-        <Style Selector="Button.dialog-btn-primary /template/ ContentPresenter">
+        <Style Selector="Button.dialog-btn-danger /template/ ContentPresenter">
             <Setter Property="Transitions">
                 <Transitions>
                     <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter>
         </Style>
-        <Style Selector="Button.dialog-btn-primary:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryPointerover}" />
+        <Style Selector="Button.dialog-btn-danger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#D23F3F" />
         </Style>
-        <Style Selector="Button.dialog-btn-primary:pressed /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryActive}" />
+        <Style Selector="Button.dialog-btn-danger:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#B83030" />
         </Style>
 
         <Style Selector="Button.dialog-btn-outline /template/ ContentPresenter">
@@ -61,7 +59,7 @@
 
     <Border x:Name="CardBorder"
             Classes="dialog-card"
-            CornerRadius="12" Margin="8" Padding="24"
+            CornerRadius="12" Margin="8" Padding="22"
             Background="{DynamicResource SemiColorBackground1}"
             BorderBrush="{DynamicResource SemiColorBorder}"
             BorderThickness="1"
@@ -69,52 +67,45 @@
         <Border.RenderTransform>
             <ScaleTransform ScaleX="1" ScaleY="1" />
         </Border.RenderTransform>
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto">
+        <Grid RowDefinitions="Auto,Auto,Auto">
 
-            <!-- Header -->
             <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,12">
-                <PathIcon Data="{pia:IconGeometry Icon=file_plus, IconType=regular}"
-                          Width="20" Height="20"
-                          Foreground="{DynamicResource SemiColorPrimary}" />
-                <TextBlock x:Name="TitleBlock" Text="New Item"
+                <PathIcon x:Name="HeaderIcon"
+                          Data="{pia:IconGeometry Icon=warning_circle, IconType=fill}"
+                          Width="22" Height="22"
+                          Foreground="{DynamicResource SemiColorDanger}" />
+                <TextBlock x:Name="TitleBlock"
                            FontSize="16" FontWeight="SemiBold"
                            Foreground="{DynamicResource SemiColorText0}"
-                           VerticalAlignment="Center" />
+                           VerticalAlignment="Center"
+                           Text="Confirm" />
             </StackPanel>
 
-            <!-- Input -->
-            <StackPanel Grid.Row="1" Spacing="2">
-                <TextBlock x:Name="LabelBlock" Text="Name" FontSize="12"
-                           Foreground="{DynamicResource SemiColorText2}" />
-                <TextBox x:Name="InputBox"
-                         KeyDown="OnInputKeyDown"
-                         Background="{DynamicResource SemiColorFill0}"
-                         BorderBrush="{DynamicResource SemiColorBorder}"
-                         CornerRadius="6" Padding="10,7" />
-                <TextBlock x:Name="ErrorText"
-                           IsVisible="False"
-                           FontSize="11" Margin="2,2,0,0"
-                           Foreground="{DynamicResource SemiColorDanger}" />
-            </StackPanel>
+            <TextBlock x:Name="MessageBlock"
+                       Grid.Row="1"
+                       FontSize="12"
+                       Foreground="{DynamicResource SemiColorText1}"
+                       TextWrapping="Wrap"
+                       Text="Are you sure?" />
 
-            <!-- Buttons — unified with RemoteEditWindow -->
-            <StackPanel Grid.Row="3" Orientation="Horizontal"
-                        HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
-                <Button Content="Cancel" Click="Cancel_Click"
+            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                        HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
+                <Button x:Name="CancelButton"
+                        Content="Cancel" Click="Cancel_Click"
                         Classes="dialog-btn-outline"
                         Background="Transparent"
                         BorderBrush="{DynamicResource SemiColorBorder}"
                         BorderThickness="1"
                         Foreground="{DynamicResource SemiColorText1}"
                         CornerRadius="6" Padding="14,6" />
-                <Button Content="OK" Click="Ok_Click"
-                        Classes="dialog-btn-primary"
-                        Background="{DynamicResource SemiColorPrimary}"
+                <Button x:Name="ConfirmButton"
+                        Content="Delete" Click="Confirm_Click"
+                        Classes="dialog-btn-danger"
+                        Background="{DynamicResource SemiColorDanger}"
                         Foreground="White"
                         BorderThickness="0"
                         CornerRadius="6" Padding="14,6" />
             </StackPanel>
-
         </Grid>
     </Border>
 </Window>

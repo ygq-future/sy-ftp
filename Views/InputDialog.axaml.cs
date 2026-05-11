@@ -1,11 +1,8 @@
-using System.Linq;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
-using Avalonia.VisualTree;
 
 namespace sy_ftp.Views;
 
@@ -16,8 +13,12 @@ public partial class InputDialog : Window
         InitializeComponent();
         ApplyShadow();
         ActualThemeVariantChanged += (_, _) => ApplyShadow();
-        WireTextBoxFocus();
         Opened += (_, _) => InputBox.Focus();
+        InputBox.TextChanged += (_, _) =>
+        {
+            if (!string.IsNullOrWhiteSpace(InputBox.Text))
+                SetError(false);
+        };
     }
 
     private void ApplyShadow()
@@ -27,28 +28,6 @@ public partial class InputDialog : Window
         CardBorder.BoxShadow = isDark
             ? BoxShadows.Parse("0 0 24 0 #18FFFFFF")
             : BoxShadows.Parse("0 0 16 0 #0C000000");
-    }
-
-    private void WireTextBoxFocus()
-    {
-        var app = Application.Current;
-        if (app is null) return;
-        IBrush? defaultBrush = null;
-        InputBox.GotFocus += (_, _) =>
-        {
-            var border = InputBox.GetVisualDescendants().OfType<Border>().FirstOrDefault();
-            if (border is null) return;
-            defaultBrush ??= border.BorderBrush;
-            if (app.TryGetResource("SemiColorPrimary", app.ActualThemeVariant, out var brush))
-                border.BorderBrush = (IBrush)brush!;
-        };
-        InputBox.LostFocus += (_, _) =>
-        {
-            if (defaultBrush is null) return;
-            var border = InputBox.GetVisualDescendants().OfType<Border>().FirstOrDefault();
-            if (border is not null)
-                border.BorderBrush = defaultBrush;
-        };
     }
 
     public string Header
@@ -75,16 +54,30 @@ public partial class InputDialog : Window
         set => base.Title = value;
     }
 
+    private void SetError(bool hasError, string message = "Name cannot be empty")
+    {
+        ErrorText.IsVisible = hasError;
+        ErrorText.Text = message;
+        if (hasError)
+        {
+            if (!InputBox.Classes.Contains("error")) InputBox.Classes.Add("error");
+        }
+        else
+        {
+            InputBox.Classes.Remove("error");
+        }
+    }
+
     private void Ok_Click(object? sender, RoutedEventArgs e)
     {
         var text = InputBox.Text?.Trim();
         if (string.IsNullOrWhiteSpace(text))
         {
-            ErrorText.Text = "Name cannot be empty.";
-            ErrorBorder.IsVisible = true;
+            SetError(true);
+            InputBox.Focus();
             return;
         }
-        ErrorBorder.IsVisible = false;
+        SetError(false);
         Input = text;
         Close(true);
     }

@@ -113,6 +113,8 @@ public partial class HostManagerViewModel : ViewModelBase
             var result = await dlg.ShowDialog<bool?>(mainWindow);
             if (result == true)
             {
+                if (string.IsNullOrWhiteSpace(host.Tags))
+                    host.Tags = "default";
                 Hosts.Add(host);
                 SelectedHost = host;
                 RefreshDerivedProperties();
@@ -147,7 +149,7 @@ public partial class HostManagerViewModel : ViewModelBase
                 host.Port = clone.Port;
                 host.Username = clone.Username;
                 host.Password = clone.Password;
-                host.Tags = clone.Tags;
+                host.Tags = string.IsNullOrWhiteSpace(clone.Tags) ? "default" : clone.Tags;
                 RefreshDerivedProperties();
             }
             SelectedHost = host;
@@ -159,9 +161,21 @@ public partial class HostManagerViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void DeleteHost(FtpHost? host)
+    private async Task DeleteHost(FtpHost? host)
     {
         if (host is null) return;
+
+        var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = lifetime?.MainWindow;
+        if (mainWindow is null) return;
+
+        var confirmed = await Views.ConfirmDialog.ShowAsync(
+            mainWindow,
+            "Delete host",
+            $"Delete host \"{host.Name}\"? This cannot be undone.");
+        if (!confirmed) return;
+
         Hosts.Remove(host);
         if (SelectedHost == host)
             SelectedHost = Hosts.FirstOrDefault();

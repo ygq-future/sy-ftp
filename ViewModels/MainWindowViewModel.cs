@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Styling;
@@ -10,8 +11,10 @@ namespace sy_ftp.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly IFtpService _ftp;
     private readonly IFileWatcherService _fileWatcher;
+
+    /// <summary>Live sessions keyed by host id.</summary>
+    private readonly Dictionary<Guid, HostSession> _sessions = new();
 
     public HostManagerViewModel HostManager { get; }
     public FileBrowserViewModel FileBrowser { get; }
@@ -29,7 +32,11 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _statusText = "Disconnected";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsStatusLoading))]
     private bool _isBusy;
+
+    /// <summary>True when either the connection is in progress or the browser is loading a directory.</summary>
+    public bool IsStatusLoading => IsBusy || FileBrowser.IsLoading;
 
     [ObservableProperty]
     private bool _isDarkMode;
@@ -49,14 +56,13 @@ public partial class MainWindowViewModel : ViewModelBase
         new("Cyan", "#00BCD4"),
     ];
 
-    public MainWindowViewModel() : this(new FtpService(), new FileWatcherService()) { }
+    public MainWindowViewModel() : this(new FileWatcherService()) { }
 
-    public MainWindowViewModel(IFtpService ftp, IFileWatcherService fileWatcher)
+    public MainWindowViewModel(IFileWatcherService fileWatcher)
     {
-        _ftp = ftp;
         _fileWatcher = fileWatcher;
         HostManager = new HostManagerViewModel();
-        FileBrowser = new FileBrowserViewModel(ftp, fileWatcher);
+        FileBrowser = new FileBrowserViewModel(new FtpService(), fileWatcher);
 
         _isDarkMode = Application.Current?.RequestedThemeVariant == ThemeVariant.Dark;
 
@@ -74,6 +80,45 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Auto-save on host changes
         HostManager.HostDataChanged += (_, _) => SaveConfig();
+
+        // Bubble FileBrowser.IsLoading into IsStatusLoading for the status-bar spinner
+        FileBrowser.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FileBrowserViewModel.IsLoading))
+                OnPropertyChanged(nameof(IsStatusLoading));
+        };
+
+        // Swap file browser session on host selection change
+        HostManager.PropertyChanged += async (_, e) =>
+        {
+            if (e.PropertyName == nameof(HostManagerViewModel.SelectedHost))
+                await OnSelectedHostChangedAsync();
+        };
+    }
+
+    private async Task OnSelectedHostChangedAsync()
+    {
+        var host = HostManager.SelectedHost;
+        if (host is null)
+        {
+            await FileBrowser.ActivateSessionAsync(null, CancellationToken.None);
+            IsConnected = false;
+            StatusText = "Disconnected";
+            return;
+        }
+
+        if (_sessions.TryGetValue(host.Id, out var session))
+        {
+            await FileBrowser.ActivateSessionAsync(session, CancellationToken.None);
+            IsConnected = true;
+            StatusText = $"Connected to {host.Name}";
+        }
+        else
+        {
+            await FileBrowser.ActivateSessionAsync(null, CancellationToken.None);
+            IsConnected = false;
+            StatusText = "Disconnected";
+        }
     }
 
     private void SaveConfig()
@@ -119,18 +164,33 @@ public partial class MainWindowViewModel : ViewModelBase
         var host = HostManager.SelectedHost;
         if (host is null) return;
 
-        IsBusy = true;
-        StatusText = "Connecting...";
-        try
+        // Already connected — just ensure file browser is pointed at this session
+        if (_sessions.TryGetValue(host.Id, out var existing))
         {
-            await _ftp.ConnectAsync(host, ct);
+            await FileBrowser.ActivateSessionAsync(existing, ct);
             IsConnected = true;
             StatusText = $"Connected to {host.Name}";
-            var homeDir = await _ftp.GetWorkingDirectoryAsync(ct);
-            await FileBrowser.LoadDirectoryAsync(homeDir, ct);
+            return;
+        }
+
+        IsBusy = true;
+        StatusText = "Connecting...";
+        var ftp = new FtpService();
+        try
+        {
+            await ftp.ConnectAsync(host, ct);
+            var homeDir = await ftp.GetWorkingDirectoryAsync(ct);
+            var session = new HostSession { HostId = host.Id, Ftp = ftp, CurrentPath = homeDir };
+            _sessions[host.Id] = session;
+            host.IsConnected = true;
+
+            await FileBrowser.ActivateSessionAsync(session, ct);
+            IsConnected = true;
+            StatusText = $"Connected to {host.Name}";
         }
         catch (Exception ex)
         {
+            try { await ftp.DisconnectAsync(CancellationToken.None); } catch { }
             StatusText = $"Error: {ex.Message}";
         }
         finally
@@ -142,18 +202,72 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task DisconnectAsync(CancellationToken ct)
     {
+        var host = HostManager.SelectedHost;
+        if (host is null) return;
+        if (!_sessions.TryGetValue(host.Id, out var session)) return;
+
         FileBrowser.StopAllWatchers();
-        await _ftp.DisconnectAsync(ct);
+        try { await session.Ftp.DisconnectAsync(ct); } catch { }
+        _sessions.Remove(host.Id);
+        host.IsConnected = false;
+
+        await FileBrowser.ActivateSessionAsync(null, ct);
         IsConnected = false;
         StatusText = "Disconnected";
-        FileBrowser.Files.Clear();
-        FileBrowser.CurrentPath = "/";
-        FileBrowser.ErrorMessage = "";
     }
 
     [RelayCommand]
     private void ToggleTopmost()
     {
         IsTopmost = !IsTopmost;
+    }
+
+    /// <summary>
+    /// Sessions accessor for other features (Transfer To).
+    /// Only exposes hosts that currently have a live session.
+    /// </summary>
+    public IReadOnlyDictionary<Guid, HostSession> Sessions => _sessions;
+
+    /// <summary>
+    /// Ensure a live session exists for the given host. Used by the Transfer-to panel
+    /// so the connection it opens is shared with the main window (the sidebar's
+    /// connected indicator lights up automatically via FtpHost.IsConnected).
+    /// Does NOT switch the main file browser to this host.
+    /// </summary>
+    public async Task<HostSession> EnsureSessionAsync(FtpHost host, CancellationToken ct)
+    {
+        if (_sessions.TryGetValue(host.Id, out var existing))
+            return existing;
+
+        var ftp = new FtpService();
+        await ftp.ConnectAsync(host, ct);
+        var homeDir = await ftp.GetWorkingDirectoryAsync(ct);
+        var session = new HostSession { HostId = host.Id, Ftp = ftp, CurrentPath = homeDir };
+        _sessions[host.Id] = session;
+        host.IsConnected = true;
+        return session;
+    }
+
+    /// <summary>Tear down a session opened via EnsureSessionAsync / ConnectAsync.</summary>
+    public async Task ReleaseSessionAsync(Guid hostId, CancellationToken ct)
+    {
+        if (!_sessions.TryGetValue(hostId, out var session)) return;
+
+        // If the main file browser is using this session, clear it first.
+        if (FileBrowser.ActiveSession?.HostId == hostId)
+            await FileBrowser.ActivateSessionAsync(null, ct);
+
+        FileBrowser.StopAllWatchers();
+        try { await session.Ftp.DisconnectAsync(ct); } catch { }
+        _sessions.Remove(hostId);
+
+        var host = HostManager.Hosts.FirstOrDefault(h => h.Id == hostId);
+        if (host is not null) host.IsConnected = false;
+
+        if (HostManager.SelectedHost?.Id == hostId)
+        {
+            IsConnected = false;
+            StatusText = "Disconnected";
+        }
     }
 }

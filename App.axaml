@@ -40,6 +40,10 @@
                     <SolidColorBrush x:Key="SemiColorDangerLight">#2A1010</SolidColorBrush>
                     <SolidColorBrush x:Key="SemiColorDangerLightPointerover">#361515</SolidColorBrush>
                     <SolidColorBrush x:Key="SemiColorDangerLightActive">#200C0C</SolidColorBrush>
+                    <!-- Alpha-0 starting colors for smooth hover transitions (no white flash) -->
+                    <SolidColorBrush x:Key="SemiColorPrimaryLightStart">#001E2240</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorFill1Start">#00222222</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDangerLightStart">#002A1010</SolidColorBrush>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Light">
@@ -48,6 +52,10 @@
                     <SolidColorBrush x:Key="SemiColorDangerLight">#FDECEA</SolidColorBrush>
                     <SolidColorBrush x:Key="SemiColorDangerLightPointerover">#FADADD</SolidColorBrush>
                     <SolidColorBrush x:Key="SemiColorDangerLightActive">#FEF2F1</SolidColorBrush>
+                    <!-- Alpha-0 starting colors (match Semi light theme hover tints) -->
+                    <SolidColorBrush x:Key="SemiColorPrimaryLightStart">#00EBF1FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorFill1Start">#00F5F5F5</SolidColorBrush>
+                    <SolidColorBrush x:Key="SemiColorDangerLightStart">#00FDECEA</SolidColorBrush>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -56,8 +64,23 @@
     <Application.Styles>
         <semi:SemiTheme />
         <semi:AvaloniaEditSemiTheme />
+        <!-- Smooth border color transition on focus -->
+        <Style Selector="TextBox /template/ Border">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+        </Style>
         <Style Selector="TextBox:focus /template/ Border">
             <Setter Property="BorderBrush" Value="{DynamicResource SemiColorPrimary}" />
+        </Style>
+        <!-- Error state: red border + smooth transition back to default -->
+        <Style Selector="TextBox.error /template/ Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorDanger}" />
+        </Style>
+        <Style Selector="TextBox.error:focus /template/ Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorDanger}" />
         </Style>
         <Style Selector="TextBox:focus">
             <Setter Property="BorderBrush" Value="{DynamicResource SemiColorPrimary}" />
