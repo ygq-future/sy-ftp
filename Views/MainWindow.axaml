@@ -158,43 +158,7 @@
         </Style>
 
         <!-- ── Window control buttons (min/max/close) ── -->
-        <Style Selector="Button.wnd-btn">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="10,0" />
-            <Setter Property="Height" Value="38" />
-            <Setter Property="CornerRadius" Value="0" />
-            <Setter Property="Foreground" Value="{DynamicResource SemiColorText1}" />
-        </Style>
-        <Style Selector="Button.wnd-btn:pointerover">
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-        <Style Selector="Button.wnd-btn:pressed">
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-        <Style Selector="Button.wnd-btn /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorFill1Start}" />
-            <Setter Property="Transitions">
-                <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.18" />
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="Button.wnd-btn:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
-        </Style>
-        <Style Selector="Button.wnd-btn:pressed /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorFill2}" />
-        </Style>
-        <Style Selector="Button.wnd-close:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#C42B1C" />
-        </Style>
-        <Style Selector="Button.wnd-close:pointerover PathIcon">
-            <Setter Property="Foreground" Value="White" />
-        </Style>
-        <Style Selector="Button.wnd-close:pressed /template/ ContentPresenter">
-            <Setter Property="Background" Value="#B0271A" />
-        </Style>
+        <!-- Removed: using OS-native caption buttons for DWM animations. -->
 
         <!-- ── Host ListBoxItem: transparent in every state, selection shown on card ── -->
         <Style Selector="ListBox.host-list ListBoxItem">
@@ -493,13 +457,7 @@
              ══════════════════════════════════════════ -->
         <Grid Grid.Row="0"
               Background="{DynamicResource SemiColorBackground1}"
-              ColumnDefinitions="Auto,Auto,*,Auto,Auto">
-
-            <!-- Drag area covers the full row behind all children -->
-            <Border x:Name="TitleDragArea"
-                    Grid.Column="0" Grid.ColumnSpan="5"
-                    Background="Transparent"
-                    IsHitTestVisible="False" />
+              ColumnDefinitions="Auto,Auto,*,Auto">
 
             <!-- Left: Connect / Disconnect -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0">
@@ -540,27 +498,20 @@
                        Width="1" Margin="8,8"
                        Fill="{DynamicResource SemiColorBorder}" />
 
-            <!-- Middle: file actions + drag area -->
-            <Grid Grid.Column="2" ColumnDefinitions="Auto,*">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="0,0,0,0">
-                    <Button Command="{Binding FileBrowser.RefreshCommand}"
-                            IsEnabled="{Binding IsConnected}"
-                            Classes="accent-text"
-                            Padding="10,0" Height="28" CornerRadius="7"
-                            ToolTip.Tip="Refresh file list">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <PathIcon Data="{pia:IconGeometry Icon=arrow_clockwise, IconType=regular}"
-                                      Width="14" Height="14" />
-                            <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="12" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-
-                <!-- Invisible drag region fills the rest of the middle column -->
-                <Border Grid.Column="1"
-                        Background="Transparent"
-                        PointerPressed="OnTitleBarPointerPressed" />
-            </Grid>
+            <!-- Middle: file actions -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                <Button Command="{Binding FileBrowser.RefreshCommand}"
+                        IsEnabled="{Binding IsConnected}"
+                        Classes="accent-text"
+                        Padding="10,0" Height="28" CornerRadius="7"
+                        ToolTip.Tip="Refresh file list">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <PathIcon Data="{pia:IconGeometry Icon=arrow_clockwise, IconType=regular}"
+                                  Width="14" Height="14" />
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="12" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
 
             <!-- Right: theme / pin toggles -->
             <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="1" Margin="0,0,2,0">
@@ -621,27 +572,7 @@
 
             </StackPanel>
 
-            <!-- Window controls: minimize / maximize / close -->
-            <StackPanel Grid.Column="4" Orientation="Horizontal">
-                <Button Classes="wnd-btn"
-                        Click="OnMinimizeClick"
-                        ToolTip.Tip="Minimize">
-                    <PathIcon Data="{pia:IconGeometry Icon=minus, IconType=regular}"
-                              Width="12" Height="12" />
-                </Button>
-                <Button Classes="wnd-btn"
-                        Click="OnMaximizeClick"
-                        ToolTip.Tip="Maximize / Restore">
-                    <PathIcon Data="{pia:IconGeometry Icon=square, IconType=regular}"
-                              Width="11" Height="11" />
-                </Button>
-                <Button Classes="wnd-btn wnd-close"
-                        Click="OnCloseClick"
-                        ToolTip.Tip="Close">
-                    <PathIcon Data="{pia:IconGeometry Icon=x, IconType=regular}"
-                              Width="12" Height="12" />
-                </Button>
-            </StackPanel>
+            <!-- Column 4: empty reserve for OS-native caption buttons (min/max/close) -->
 
         </Grid>
 

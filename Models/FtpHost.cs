@@ -20,6 +20,7 @@ public partial class FtpHost : ObservableObject
     private string _username = "anonymous";
 
     [ObservableProperty]
+    [property: JsonConverter(typeof(EncryptedStringConverter))]
     private string _password = string.Empty;
 
     [ObservableProperty]
