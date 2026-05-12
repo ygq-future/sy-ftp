@@ -73,20 +73,23 @@ public partial class MainWindow : Window
 
         if (WindowState == Avalonia.Controls.WindowState.FullScreen)
         {
-            // 进入全屏：移除 NSToolbar，避免 macOS 灰色条遮挡自定义标题栏
+            // 全屏下红绿灯自动隐藏，移除留白
+            MacTrafficLightSpacer.Width = 0;
+
+            // 移除 NSToolbar，避免 macOS 灰色条遮挡自定义标题栏
             var handle = this.TryGetPlatformHandle();
             if (handle is not null)
                 MacWindowTitleBar.Remove(handle.Handle);
         }
         else
         {
-            // 退出全屏：恢复 NSToolbar
-            Dispatcher.Post(() =>
-            {
-                var handle = this.TryGetPlatformHandle();
-                if (handle is not null)
-                    MacWindowTitleBar.Apply(handle.Handle);
-            }, DispatcherPriority.Background);
+            // 恢复红绿灯留白
+            MacTrafficLightSpacer.Width = 76;
+
+            // 恢复 NSToolbar → 红绿灯重新居中
+            var handle = this.TryGetPlatformHandle();
+            if (handle is not null)
+                MacWindowTitleBar.Apply(handle.Handle);
         }
     }
 

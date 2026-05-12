@@ -169,7 +169,8 @@ internal static class MacWindowTitleBar
             var transparentFn = Marshal.GetDelegateForFunctionPointer<Fn_void_sel_byte>(transparentImp);
             transparentFn(nsWindow, transparentSel, 1);
 
-            // 不释放 _toolbar — 保留引用供恢复时复用
+            // 清除状态标记，允许后续 Apply 重新创建工具栏
+            _toolbar = IntPtr.Zero;
         }
         catch (Exception ex)
         {
