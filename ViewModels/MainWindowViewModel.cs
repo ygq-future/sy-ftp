@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using sy_ftp.Helpers;
 using sy_ftp.Models;
 using sy_ftp.Services;
 
@@ -18,6 +19,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public HostManagerViewModel HostManager { get; }
     public FileBrowserViewModel FileBrowser { get; }
+    public LocalizationService Loc => LocalizationService.Instance;
 
     [ObservableProperty]
     private bool _isTopmost;
@@ -29,7 +31,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool IsNotConnected => !IsConnected;
 
     [ObservableProperty]
-    private string _statusText = "Disconnected";
+    private string _statusText;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsStatusLoading))]
@@ -44,17 +46,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _accentColor = "#4050B5";
 
-    public IReadOnlyList<AccentColorOption> AccentColors { get; } =
-    [
-        new("Indigo", "#4050B5"),
-        new("Teal", "#009688"),
-        new("Green", "#4CAF50"),
-        new("Amber", "#FF9800"),
-        new("Red", "#EF5350"),
-        new("Purple", "#7C4DFF"),
-        new("Pink", "#E91E63"),
-        new("Cyan", "#00BCD4"),
-    ];
+    /// <summary>Extended palette used by the Settings window.</summary>
+    public IReadOnlyList<AccentColorOption> AccentColors => AccentPalette.Options;
 
     public MainWindowViewModel() : this(new FileWatcherService()) { }
 
@@ -63,6 +56,8 @@ public partial class MainWindowViewModel : ViewModelBase
         _fileWatcher = fileWatcher;
         HostManager = new HostManagerViewModel();
         FileBrowser = new FileBrowserViewModel(new FtpService(), fileWatcher);
+
+        _statusText = Loc.Tr("status.disconnected");
 
         _isDarkMode = Application.Current?.RequestedThemeVariant == ThemeVariant.Dark;
 
@@ -94,6 +89,17 @@ public partial class MainWindowViewModel : ViewModelBase
             if (e.PropertyName == nameof(HostManagerViewModel.SelectedHost))
                 await OnSelectedHostChangedAsync();
         };
+
+        // Keep translated status strings in sync when language changes
+        Loc.LanguageChanged += (_, _) => RefreshTranslatedStatus();
+    }
+
+    private void RefreshTranslatedStatus()
+    {
+        if (IsConnected && HostManager.SelectedHost is { } host)
+            StatusText = Loc.Tr("status.connected", host.Name);
+        else if (!IsBusy)
+            StatusText = Loc.Tr("status.disconnected");
     }
 
     private async Task OnSelectedHostChangedAsync()
@@ -103,7 +109,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             await FileBrowser.ActivateSessionAsync(null, CancellationToken.None);
             IsConnected = false;
-            StatusText = "Disconnected";
+            StatusText = Loc.Tr("status.disconnected");
             return;
         }
 
@@ -111,13 +117,13 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             await FileBrowser.ActivateSessionAsync(session, CancellationToken.None);
             IsConnected = true;
-            StatusText = $"Connected to {host.Name}";
+            StatusText = Loc.Tr("status.connected", host.Name);
         }
         else
         {
             await FileBrowser.ActivateSessionAsync(null, CancellationToken.None);
             IsConnected = false;
-            StatusText = "Disconnected";
+            StatusText = Loc.Tr("status.disconnected");
         }
     }
 
@@ -141,6 +147,14 @@ public partial class MainWindowViewModel : ViewModelBase
         App.SaveAccentColor(option.Hex);
     }
 
+    public void ApplyAccentHex(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return;
+        AccentColor = hex;
+        App.ApplyAccentColor(hex);
+        App.SaveAccentColor(hex);
+    }
+
     partial void OnIsDarkModeChanged(bool value)
     {
         var theme = value ? ThemeVariant.Dark : ThemeVariant.Light;
@@ -159,6 +173,18 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task OpenSettingsAsync()
+    {
+        var lifetime = Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = lifetime?.MainWindow;
+        if (mainWindow is null) return;
+
+        var dlg = new Views.SettingsWindow { DataContext = new SettingsViewModel(this) };
+        await dlg.ShowDialog(mainWindow);
+    }
+
+    [RelayCommand]
     private async Task ConnectAsync(CancellationToken ct)
     {
         var host = HostManager.SelectedHost;
@@ -169,29 +195,29 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             await FileBrowser.ActivateSessionAsync(existing, ct);
             IsConnected = true;
-            StatusText = $"Connected to {host.Name}";
+            StatusText = Loc.Tr("status.connected", host.Name);
             return;
         }
 
         IsBusy = true;
-        StatusText = "Connecting...";
+        StatusText = Loc.Tr("status.connecting");
         var ftp = new FtpService();
         try
         {
             await ftp.ConnectAsync(host, ct);
             var homeDir = await ftp.GetWorkingDirectoryAsync(ct);
-            var session = new HostSession { HostId = host.Id, Ftp = ftp, CurrentPath = homeDir };
+            var session = new HostSession { HostId = host.Id, Host = host, Ftp = ftp, CurrentPath = homeDir };
             _sessions[host.Id] = session;
             host.IsConnected = true;
 
             await FileBrowser.ActivateSessionAsync(session, ct);
             IsConnected = true;
-            StatusText = $"Connected to {host.Name}";
+            StatusText = Loc.Tr("status.connected", host.Name);
         }
         catch (Exception ex)
         {
             try { await ftp.DisconnectAsync(CancellationToken.None); } catch { }
-            StatusText = $"Error: {ex.Message}";
+            StatusText = Loc.Tr("status.error", ex.Message);
         }
         finally
         {
@@ -213,7 +239,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         await FileBrowser.ActivateSessionAsync(null, ct);
         IsConnected = false;
-        StatusText = "Disconnected";
+        StatusText = Loc.Tr("status.disconnected");
     }
 
     [RelayCommand]
@@ -242,7 +268,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var ftp = new FtpService();
         await ftp.ConnectAsync(host, ct);
         var homeDir = await ftp.GetWorkingDirectoryAsync(ct);
-        var session = new HostSession { HostId = host.Id, Ftp = ftp, CurrentPath = homeDir };
+        var session = new HostSession { HostId = host.Id, Host = host, Ftp = ftp, CurrentPath = homeDir };
         _sessions[host.Id] = session;
         host.IsConnected = true;
         return session;
@@ -267,7 +293,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (HostManager.SelectedHost?.Id == hostId)
         {
             IsConnected = false;
-            StatusText = "Disconnected";
+            StatusText = Loc.Tr("status.disconnected");
         }
     }
 }

@@ -5,6 +5,8 @@
         xmlns:sys="using:System"
         xmlns:pia="using:PhosphorIconsAvalonia.Markup"
         xmlns:conv="using:sy_ftp.Converters"
+        xmlns:svc="using:sy_ftp.Services"
+        xmlns:l="using:sy_ftp.Markup"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="560"
@@ -32,6 +34,7 @@
         <conv:BoolToOpacityConverter x:Key="BoolToOpacity" />
         <conv:FileIconGeometryConverter x:Key="FileIconGeometry" />
         <conv:FileIconBrushConverter x:Key="FileIconBrush" />
+        <conv:TagLabelConverter x:Key="TagLabel" />
     </Window.Resources>
 
     <Window.Styles>
@@ -465,17 +468,17 @@
                         IsEnabled="{Binding IsNotConnected}"
                         Classes="accent-text"
                         Padding="12,0" Height="28" CornerRadius="7"
-                        ToolTip.Tip="Connect to selected host">
+                        ToolTip.Tip="{l:Tr toolbar.connect.tooltip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <PathIcon Data="{pia:IconGeometry Icon=plug, IconType=fill}"
                                   Width="14" Height="14" />
                         <TextBlock VerticalAlignment="Center"
                                    FontSize="12" FontWeight="Medium"
-                                   Text="Connecting…"
+                                   Text="{l:Tr toolbar.connecting}"
                                    IsVisible="{Binding IsBusy}" />
                         <TextBlock VerticalAlignment="Center"
                                    FontSize="12" FontWeight="Medium"
-                                   Text="Connect"
+                                   Text="{l:Tr toolbar.connect}"
                                    IsVisible="{Binding IsBusy, Converter={StaticResource BoolInverter}}" />
                     </StackPanel>
                 </Button>
@@ -484,11 +487,11 @@
                         IsEnabled="{Binding IsConnected}"
                         Classes="accent-text"
                         Padding="10,0" Height="28" CornerRadius="7"
-                        ToolTip.Tip="Disconnect">
+                        ToolTip.Tip="{l:Tr toolbar.disconnect.tooltip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <PathIcon Data="{pia:IconGeometry Icon=x_circle, IconType=regular}"
                                   Width="14" Height="14" />
-                        <TextBlock Text="Disconnect" VerticalAlignment="Center" FontSize="12" />
+                        <TextBlock Text="{l:Tr toolbar.disconnect}" VerticalAlignment="Center" FontSize="12" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -504,22 +507,22 @@
                         IsEnabled="{Binding IsConnected}"
                         Classes="accent-text"
                         Padding="10,0" Height="28" CornerRadius="7"
-                        ToolTip.Tip="Refresh file list">
+                        ToolTip.Tip="{l:Tr toolbar.refresh.tooltip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <PathIcon Data="{pia:IconGeometry Icon=arrow_clockwise, IconType=regular}"
                                   Width="14" Height="14" />
-                        <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="12" />
+                        <TextBlock Text="{l:Tr toolbar.refresh}" VerticalAlignment="Center" FontSize="12" />
                     </StackPanel>
                 </Button>
             </StackPanel>
 
-            <!-- Right: theme / pin toggles -->
+            <!-- Right: theme / pin / settings toggles -->
             <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="1" Margin="0,0,2,0">
 
                 <Button Command="{Binding ToggleThemeCommand}"
                         Classes="accent-text"
                         Padding="9,0" Height="32" CornerRadius="7"
-                        ToolTip.Tip="Toggle light / dark theme">
+                        ToolTip.Tip="{l:Tr toolbar.theme.tooltip}">
                     <Panel>
                         <PathIcon Data="{pia:IconGeometry Icon=sun, IconType=fill}"
                                   Width="16" Height="16"
@@ -545,7 +548,7 @@
                 <ToggleButton IsChecked="{Binding IsTopmost}"
                               Classes="icon-toggle"
                               Padding="9,0" Height="32" CornerRadius="7"
-                              ToolTip.Tip="Always on top">
+                              ToolTip.Tip="{l:Tr toolbar.topmost.tooltip}">
                     <Panel>
                         <PathIcon Data="{pia:IconGeometry Icon=push_pin_simple, IconType=fill}"
                                   Width="16" Height="16"
@@ -570,6 +573,15 @@
                     </Panel>
                 </ToggleButton>
 
+                <Button Command="{Binding OpenSettingsCommand}"
+                        Classes="accent-text"
+                        Padding="9,0" Height="32" CornerRadius="7"
+                        ToolTip.Tip="{l:Tr toolbar.settings.tooltip}">
+                    <PathIcon Data="{pia:IconGeometry Icon=gear, IconType=regular}"
+                              Width="16" Height="16"
+                              Foreground="{DynamicResource SemiColorText1}" />
+                </Button>
+
             </StackPanel>
 
             <!-- Column 4: empty reserve for OS-native caption buttons (min/max/close) -->
@@ -583,8 +595,6 @@
 
         <!-- ══════════════════════════════════════════
              Main Content (sidebar | gap | browser)
-             8 swatches × (20 + 4) = 192 px content
-             + padding 10+10 + border 1+1 = 214 → use 220 px
              ══════════════════════════════════════════ -->
         <Grid Grid.Row="1" ColumnDefinitions="220,6,*" Margin="8,8,8,0">
 
@@ -595,29 +605,27 @@
                     Background="{DynamicResource SemiColorNavBackground}"
                     BorderBrush="{DynamicResource SemiColorBorder}"
                     BorderThickness="1">
-                <Grid RowDefinitions="Auto,Auto,*,Auto">
+                <Grid RowDefinitions="Auto,Auto,*">
 
                     <!-- Header -->
                     <Border Grid.Row="0" Padding="12,10"
                             BorderBrush="{DynamicResource SemiColorBorder}"
                             BorderThickness="0,0,0,1">
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0" Text="Hosts"
+                            <TextBlock Grid.Column="0" Text="{l:Tr sidebar.hosts}"
                                        FontWeight="SemiBold" FontSize="14"
                                        Foreground="{DynamicResource SemiColorText0}"
                                        VerticalAlignment="Center" />
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                                <!-- Add: small text button in accent colour -->
                                 <Button Command="{Binding HostManager.AddHostCommand}"
                                         Classes="sidebar-add-btn"
                                         Padding="8,3" CornerRadius="6"
                                         FontSize="11" FontWeight="Medium"
                                         Foreground="{DynamicResource SemiColorPrimary}"
                                         BorderThickness="0"
-                                        ToolTip.Tip="Add new host"
-                                        Content="+ Add" />
-                                <!-- Delete: small text button in danger colour -->
+                                        ToolTip.Tip="{l:Tr sidebar.add.tooltip}"
+                                        Content="{l:Tr sidebar.add}" />
                                 <Button Command="{Binding HostManager.DeleteHostCommand}"
                                         CommandParameter="{Binding HostManager.SelectedHost}"
                                         Classes="sidebar-delete-btn"
@@ -625,8 +633,8 @@
                                         FontSize="11" FontWeight="Medium"
                                         Foreground="{DynamicResource SemiColorDanger}"
                                         BorderThickness="0"
-                                        ToolTip.Tip="Delete selected host"
-                                        Content="Delete" />
+                                        ToolTip.Tip="{l:Tr sidebar.delete.tooltip}"
+                                        Content="{l:Tr sidebar.delete}" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -646,7 +654,14 @@
                                   Padding="10,5">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="sys:String">
-                                    <TextBlock Text="{Binding}" />
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{x:Static conv:TagLabelConverter.Instance}">
+                                                <Binding />
+                                                <Binding Path="Language" Source="{x:Static svc:LocalizationService.Instance}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
@@ -663,7 +678,7 @@
                              Padding="6">
                         <ListBox.ContextMenu>
                             <ContextMenu Background="{DynamicResource SemiColorNavBackground}">
-                                <MenuItem Header="Connect"
+                                <MenuItem Header="{l:Tr host.menu.connect}"
                                           Command="{Binding ConnectCommand}"
                                           IsEnabled="{Binding IsNotConnected}">
                                     <MenuItem.Icon>
@@ -671,7 +686,7 @@
                                                   Width="14" Height="14" />
                                     </MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="Disconnect"
+                                <MenuItem Header="{l:Tr host.menu.disconnect}"
                                           Command="{Binding DisconnectCommand}"
                                           IsEnabled="{Binding IsConnected}">
                                     <MenuItem.Icon>
@@ -680,7 +695,7 @@
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <Separator />
-                                <MenuItem Header="Edit Host"
+                                <MenuItem Header="{l:Tr host.menu.edit}"
                                           Command="{Binding HostManager.EditHostCommand}"
                                           CommandParameter="{Binding HostManager.SelectedHost}">
                                     <MenuItem.Icon>
@@ -688,7 +703,7 @@
                                                   Width="14" Height="14" />
                                     </MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="Delete Host"
+                                <MenuItem Header="{l:Tr host.menu.delete}"
                                           Command="{Binding HostManager.DeleteHostCommand}"
                                           CommandParameter="{Binding HostManager.SelectedHost}">
                                     <MenuItem.Icon>
@@ -697,7 +712,7 @@
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <Separator />
-                                <MenuItem Header="Add New Host"
+                                <MenuItem Header="{l:Tr host.menu.add}"
                                           Command="{Binding HostManager.AddHostCommand}">
                                     <MenuItem.Icon>
                                         <PathIcon Data="{pia:IconGeometry Icon=plus_circle, IconType=regular}"
@@ -715,14 +730,13 @@
                                         BorderBrush="{DynamicResource SemiColorBorder}"
                                         BorderThickness="1">
                                     <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto">
-                                        <!-- Connected indicator: small green dot -->
                                         <Ellipse Grid.Row="0" Grid.Column="0"
                                                  Width="7" Height="7"
                                                  VerticalAlignment="Center"
                                                  Margin="0,0,6,0"
                                                  Fill="{DynamicResource SemiColorSuccess}"
                                                  IsVisible="{Binding IsConnected}"
-                                                 ToolTip.Tip="Connected" />
+                                                 ToolTip.Tip="{l:Tr file.tip.connected}" />
                                         <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
                                                    Text="{Binding Name}"
                                                    FontWeight="Medium" FontSize="13"
@@ -746,53 +760,6 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-
-                    <!-- Accent colour swatches -->
-                    <Border Grid.Row="3" Padding="10,8"
-                            BorderBrush="{DynamicResource SemiColorBorder}"
-                            BorderThickness="0,1,0,0">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Accent" FontSize="10"
-                                       Foreground="{DynamicResource SemiColorText3}"
-                                       HorizontalAlignment="Center" />
-                            <!--
-                                8 swatches, no trailing margin on last item.
-                                Centered via HorizontalAlignment on the StackPanel.
-                            -->
-                            <ItemsControl ItemsSource="{Binding AccentColors}"
-                                          HorizontalAlignment="Center">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <!-- Fixed 8-column grid: each cell = 24px, total = 192px, perfectly centered -->
-                                        <UniformGrid Rows="1" Columns="8" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="models:AccentColorOption"
-                                                  x:CompileBindings="False">
-                                        <Button Classes="accent-swatch"
-                                                Command="{Binding DataContext.SetAccentColorCommand, ElementName=RootWindow}"
-                                                CommandParameter="{Binding}"
-                                                Width="24" Height="24"
-                                                Padding="0" Margin="0"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                CornerRadius="12"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                ToolTip.Tip="{Binding Name}">
-                                            <Border Classes="swatch-halo"
-                                                    Width="20" Height="20"
-                                                    CornerRadius="10"
-                                                    Background="{Binding Hex, Converter={StaticResource HexToBrush}}"
-                                                    BorderBrush="{DynamicResource SemiColorBorder}"
-                                                    BorderThickness="1" />
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
 
                 </Grid>
             </Border>
@@ -916,9 +883,9 @@
                                                       Width="13" Height="13"
                                                       Foreground="{DynamicResource SemiColorText3}" />
                                         </Button>
-                                        <Button Classes="accent-text" Padding="4,2"
-                                                Click="OnCopyPathClick"
-                                                ToolTip.Tip="Copy path">
+                        <Button Classes="accent-text" Padding="4,2"
+                                Click="OnCopyPathClick"
+                                ToolTip.Tip="{l:Tr file.path.copy.tooltip}">
                                             <PathIcon Data="{pia:IconGeometry Icon=copy, IconType=regular}"
                                                       Width="13" Height="13"
                                                       Foreground="{DynamicResource SemiColorText3}" />
@@ -940,14 +907,14 @@
                                              KeyDown="OnPathEditKeyDown" />
                                     <Button Classes="accent-text" Padding="4,2"
                                             Command="{Binding FileBrowser.NavigateToEditPathCommand}"
-                                            ToolTip.Tip="Go (Enter)">
+                                            ToolTip.Tip="{l:Tr file.path.edit.go.tooltip}">
                                         <PathIcon Data="{pia:IconGeometry Icon=arrow_right, IconType=regular}"
                                                   Width="14" Height="14"
                                                   Foreground="{DynamicResource SemiColorPrimary}" />
                                     </Button>
                                     <Button Classes="accent-text" Padding="4,2"
                                             Command="{Binding FileBrowser.CancelPathEditCommand}"
-                                            ToolTip.Tip="Cancel (Esc)">
+                                            ToolTip.Tip="{l:Tr file.path.edit.cancel.tooltip}">
                                         <PathIcon Data="{pia:IconGeometry Icon=x, IconType=regular}"
                                                   Width="14" Height="14"
                                                   Foreground="{DynamicResource SemiColorText2}" />
@@ -975,7 +942,7 @@
                                     Command="{Binding FileBrowser.ToggleSortCommand}"
                                     CommandParameter="{x:Static vm:FileSortColumn.Name}">
                                 <StackPanel Orientation="Horizontal" Spacing="3">
-                                    <TextBlock Text="Name" FontSize="11"
+                                    <TextBlock Text="{l:Tr file.col.name}" FontSize="11"
                                                Foreground="{DynamicResource SemiColorText2}" />
                                     <TextBlock FontSize="9"
                                                Foreground="{DynamicResource SemiColorPrimary}"
@@ -987,7 +954,7 @@
                                     Command="{Binding FileBrowser.ToggleSortCommand}"
                                     CommandParameter="{x:Static vm:FileSortColumn.Size}">
                                 <StackPanel Orientation="Horizontal" Spacing="3">
-                                    <TextBlock Text="Size" FontSize="11"
+                                    <TextBlock Text="{l:Tr file.col.size}" FontSize="11"
                                                Foreground="{DynamicResource SemiColorText2}" />
                                     <TextBlock FontSize="9"
                                                Foreground="{DynamicResource SemiColorPrimary}"
@@ -999,7 +966,7 @@
                                     Command="{Binding FileBrowser.ToggleSortCommand}"
                                     CommandParameter="{x:Static vm:FileSortColumn.LastModified}">
                                 <StackPanel Orientation="Horizontal" Spacing="3">
-                                    <TextBlock Text="Modified" FontSize="11"
+                                    <TextBlock Text="{l:Tr file.col.modified}" FontSize="11"
                                                Foreground="{DynamicResource SemiColorText2}" />
                                     <TextBlock FontSize="9"
                                                Foreground="{DynamicResource SemiColorPrimary}"
@@ -1028,7 +995,7 @@
                                 <PathIcon Data="{pia:IconGeometry Icon=check_circle, IconType=fill}"
                                           Width="14" Height="14"
                                           Foreground="{DynamicResource SemiColorSuccess}" />
-                                <TextBlock Text="Path copied!"
+                                <TextBlock Text="{l:Tr file.path.copied}"
                                            FontSize="12"
                                            Foreground="{DynamicResource SemiColorSuccess}" />
                             </StackPanel>
@@ -1067,7 +1034,7 @@
                             <PathIcon Data="{pia:IconGeometry Icon=cloud, IconType=regular}"
                                       Width="52" Height="52"
                                       Foreground="{DynamicResource SemiColorText3}" />
-                            <TextBlock Text="Select a host and click Connect"
+                            <TextBlock Text="{l:Tr file.empty.title}"
                                        FontSize="14"
                                        Foreground="{DynamicResource SemiColorText2}"
                                        HorizontalAlignment="Center" />
@@ -1090,7 +1057,7 @@
                                  DragDrop.Drop="OnFileListDrop">
                             <ListBox.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="Refresh"
+                                    <MenuItem Header="{l:Tr file.menu.refresh}"
                                               Command="{Binding FileBrowser.RefreshCommand}"
                                               IsEnabled="{Binding IsConnected}">
                                         <MenuItem.Icon>
@@ -1099,7 +1066,7 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <Separator />
-                                    <MenuItem Header="New Folder"
+                                    <MenuItem Header="{l:Tr file.menu.new_folder}"
                                               Command="{Binding FileBrowser.NewFolderCommand}"
                                               IsEnabled="{Binding IsConnected}">
                                         <MenuItem.Icon>
@@ -1107,7 +1074,7 @@
                                                       Width="14" Height="14" />
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="New File"
+                                    <MenuItem Header="{l:Tr file.menu.new_file}"
                                               Command="{Binding FileBrowser.NewFileCommand}"
                                               IsEnabled="{Binding IsConnected}">
                                         <MenuItem.Icon>
@@ -1126,19 +1093,19 @@
                                         <Border.ContextMenu>
                                             <ContextMenu x:Name="ItemContextMenu"
                                                          IsVisible="{Binding !IsParentEntry}">
-                                                <MenuItem Header="Download" Click="OnItemDownloadClick">
+                                                <MenuItem Header="{l:Tr file.menu.download}" Click="OnItemDownloadClick">
                                                     <MenuItem.Icon>
                                                         <PathIcon Data="{pia:IconGeometry Icon=download_simple, IconType=regular}"
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="Download to…" Click="OnItemDownloadToClick">
+                                                <MenuItem Header="{l:Tr file.menu.download_to}" Click="OnItemDownloadToClick">
                                                     <MenuItem.Icon>
                                                         <PathIcon Data="{pia:IconGeometry Icon=folder_open, IconType=regular}"
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="Remote Edit"
+                                                <MenuItem Header="{l:Tr file.menu.remote_edit}"
                                                           Click="OnItemRemoteEditClick"
                                                           IsVisible="{Binding DataContext.FileBrowser.AllSelectedAreFiles, ElementName=RootWindow}">
                                                     <MenuItem.Icon>
@@ -1146,7 +1113,7 @@
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="Online Edit"
+                                                <MenuItem Header="{l:Tr file.menu.online_edit}"
                                                           Click="OnItemOnlineEditClick"
                                                           IsVisible="{Binding DataContext.FileBrowser.AllSelectedAreFiles, ElementName=RootWindow}">
                                                     <MenuItem.Icon>
@@ -1154,14 +1121,14 @@
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="Transfer to…"
+                                                <MenuItem Header="{l:Tr file.menu.transfer_to}"
                                                           Click="OnItemTransferToClick">
                                                     <MenuItem.Icon>
                                                         <PathIcon Data="{pia:IconGeometry Icon=arrow_fat_right, IconType=regular}"
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="Delete" Click="OnItemDeleteClick">
+                                                <MenuItem Header="{l:Tr file.menu.delete}" Click="OnItemDeleteClick">
                                                     <MenuItem.Icon>
                                                         <PathIcon Data="{pia:IconGeometry Icon=trash_simple, IconType=regular}"
                                                                   Width="14" Height="14" />
@@ -1169,7 +1136,7 @@
                                                 </MenuItem>
                                                 <Separator x:Name="ItemContextMenuSeparator"
                                                            IsVisible="{Binding DataContext.FileBrowser.HasMultiSelection, ElementName=RootWindow, Converter={StaticResource BoolInverter}}" />
-                                                <MenuItem Header="Refresh"
+                                                <MenuItem Header="{l:Tr file.menu.refresh}"
                                                           Command="{Binding DataContext.FileBrowser.RefreshCommand, ElementName=RootWindow}"
                                                           IsVisible="{Binding DataContext.FileBrowser.HasMultiSelection, ElementName=RootWindow, Converter={StaticResource BoolInverter}}">
                                                     <MenuItem.Icon>
@@ -1177,7 +1144,7 @@
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="New Folder"
+                                                <MenuItem Header="{l:Tr file.menu.new_folder}"
                                                           Command="{Binding DataContext.FileBrowser.NewFolderCommand, ElementName=RootWindow}"
                                                           IsVisible="{Binding DataContext.FileBrowser.HasMultiSelection, ElementName=RootWindow, Converter={StaticResource BoolInverter}}">
                                                     <MenuItem.Icon>
@@ -1185,7 +1152,7 @@
                                                                   Width="14" Height="14" />
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="New File"
+                                                <MenuItem Header="{l:Tr file.menu.new_file}"
                                                           Command="{Binding DataContext.FileBrowser.NewFileCommand, ElementName=RootWindow}"
                                                           IsVisible="{Binding DataContext.FileBrowser.HasMultiSelection, ElementName=RootWindow, Converter={StaticResource BoolInverter}}">
                                                     <MenuItem.Icon>
@@ -1394,7 +1361,7 @@
                     </Separator.Transitions>
                 </Separator>
                 <TextBlock Grid.Column="4"
-                           Text="{Binding FileBrowser.Files.Count, StringFormat='{}{0} items'}"
+                           Text="{Binding FileBrowser.ItemCountDisplay}"
                            FontSize="11" Margin="0,0,2,0" VerticalAlignment="Center"
                            Foreground="{DynamicResource SemiColorText3}"
                            Opacity="{Binding IsConnected, Converter={StaticResource BoolToOpacity}}"
@@ -1420,7 +1387,7 @@
                     <PathIcon Data="{pia:IconGeometry Icon=arrow_counter_clockwise, IconType=regular}"
                               Width="11" Height="11"
                               Foreground="{DynamicResource SemiColorSuccess}" />
-                    <TextBlock Text="{Binding FileBrowser.LastSyncTime, StringFormat='Synced {0}'}"
+                    <TextBlock Text="{Binding FileBrowser.LastSyncDisplay}"
                                FontSize="11" VerticalAlignment="Center"
                                Foreground="{DynamicResource SemiColorSuccess}" />
                 </StackPanel>

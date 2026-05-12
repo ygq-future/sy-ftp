@@ -26,6 +26,10 @@ public partial class FtpHost : ObservableObject
     [ObservableProperty]
     private string _tags = string.Empty;
 
+    /// <summary>Per-host override for download destination. Null = use global default.</summary>
+    [ObservableProperty]
+    private string? _downloadPath;
+
     /// <summary>Runtime-only connection indicator. Not persisted.</summary>
     [ObservableProperty]
     [property: JsonIgnore]
@@ -43,6 +47,7 @@ public partial class FtpHost : ObservableObject
         Port = Port,
         Username = Username,
         Password = Password,
-        Tags = Tags
+        Tags = Tags,
+        DownloadPath = DownloadPath,
     };
 }

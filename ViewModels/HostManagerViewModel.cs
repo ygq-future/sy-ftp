@@ -108,8 +108,9 @@ public partial class HostManagerViewModel : ViewModelBase
             var mainWindow = lifetime?.MainWindow;
             if (mainWindow is null) return;
 
+            var loc = Services.LocalizationService.Instance;
             var host = new FtpHost();
-            var dlg = new Views.HostEditWindow { DataContext = host, Title = "Add Host" };
+            var dlg = new Views.HostEditWindow { DataContext = host, Title = loc.Tr("hostedit.add.title") };
             var result = await dlg.ShowDialog<bool?>(mainWindow);
             if (result == true)
             {
@@ -138,9 +139,10 @@ public partial class HostManagerViewModel : ViewModelBase
                 return;
             }
 
+            var loc = Services.LocalizationService.Instance;
             // Work on a clone so Cancel truly reverts changes
             var clone = host.Clone();
-            var dlg = new Views.HostEditWindow { DataContext = clone, Title = "Edit Host" };
+            var dlg = new Views.HostEditWindow { DataContext = clone, Title = loc.Tr("hostedit.edit.title") };
             var result = await dlg.ShowDialog<bool?>(mainWindow);
             if (result == true)
             {
@@ -150,6 +152,7 @@ public partial class HostManagerViewModel : ViewModelBase
                 host.Username = clone.Username;
                 host.Password = clone.Password;
                 host.Tags = string.IsNullOrWhiteSpace(clone.Tags) ? "default" : clone.Tags;
+                host.DownloadPath = string.IsNullOrWhiteSpace(clone.DownloadPath) ? null : clone.DownloadPath;
                 RefreshDerivedProperties();
             }
             SelectedHost = host;
@@ -170,10 +173,12 @@ public partial class HostManagerViewModel : ViewModelBase
         var mainWindow = lifetime?.MainWindow;
         if (mainWindow is null) return;
 
+        var loc = Services.LocalizationService.Instance;
         var confirmed = await Views.ConfirmDialog.ShowAsync(
             mainWindow,
-            "Delete host",
-            $"Delete host \"{host.Name}\"? This cannot be undone.");
+            loc.Tr("confirm.delete.host.title"),
+            loc.Tr("confirm.delete.host.msg", host.Name),
+            loc.Tr("confirm.delete.btn"));
         if (!confirmed) return;
 
         Hosts.Remove(host);

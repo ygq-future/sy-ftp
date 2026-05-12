@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:pia="using:PhosphorIconsAvalonia.Markup"
+        xmlns:l="using:sy_ftp.Markup"
         x:Class="sy_ftp.Views.ConfirmDialog"
         Width="380" MinHeight="170" SizeToContent="Height"
         WindowDecorations="None"
@@ -91,7 +92,7 @@
             <StackPanel Grid.Row="2" Orientation="Horizontal"
                         HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
                 <Button x:Name="CancelButton"
-                        Content="Cancel" Click="Cancel_Click"
+                        Content="{l:Tr confirm.btn.cancel}" Click="Cancel_Click"
                         Classes="dialog-btn-outline"
                         Background="Transparent"
                         BorderBrush="{DynamicResource SemiColorBorder}"

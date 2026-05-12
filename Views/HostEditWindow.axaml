@@ -2,9 +2,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="using:sy_ftp.Models"
         xmlns:pia="using:PhosphorIconsAvalonia.Markup"
+        xmlns:l="using:sy_ftp.Markup"
         x:Class="sy_ftp.Views.HostEditWindow"
         x:DataType="models:FtpHost"
-        Width="400" Height="470"
+        Width="420" Height="560"
         Title="Host"
         WindowDecorations="None"
         CanResize="False"
@@ -92,7 +93,7 @@
                 <PathIcon Data="{pia:IconGeometry Icon=desktop, IconType=regular}"
                           Width="22" Height="22"
                           Foreground="{DynamicResource SemiColorPrimary}" />
-                <TextBlock Text="Host" FontSize="18" FontWeight="SemiBold"
+                <TextBlock Text="{l:Tr hostedit.header}" FontSize="18" FontWeight="SemiBold"
                            Foreground="{DynamicResource SemiColorText0}"
                            VerticalAlignment="Center" />
             </StackPanel>
@@ -101,38 +102,38 @@
             <StackPanel Grid.Row="1" Spacing="8">
 
                 <StackPanel Spacing="2">
-                    <TextBlock Text="Name" FontSize="12"
+                    <TextBlock Text="{l:Tr hostedit.field.name}" FontSize="12"
                                Foreground="{DynamicResource SemiColorText2}" />
                     <TextBox x:Name="NameBox"
                              Text="{Binding Name, Mode=TwoWay}"
-                             PlaceholderText="My FTP Server"
+                             PlaceholderText="{l:Tr hostedit.field.name.placeholder}"
                              Background="{DynamicResource SemiColorFill0}"
                              BorderBrush="{DynamicResource SemiColorBorder}"
                              CornerRadius="6" Padding="10,7" />
                     <TextBlock x:Name="NameError"
                                Classes="field-error"
                                IsVisible="False"
-                               Text="Name is required" />
+                               Text="{l:Tr hostedit.field.name.required}" />
                 </StackPanel>
 
                 <StackPanel Spacing="2">
-                    <TextBlock Text="Host" FontSize="12"
+                    <TextBlock Text="{l:Tr hostedit.field.host}" FontSize="12"
                                Foreground="{DynamicResource SemiColorText2}" />
                     <TextBox x:Name="HostBox"
                              Text="{Binding Host, Mode=TwoWay}"
-                             PlaceholderText="ftp.example.com"
+                             PlaceholderText="{l:Tr hostedit.field.host.placeholder}"
                              Background="{DynamicResource SemiColorFill0}"
                              BorderBrush="{DynamicResource SemiColorBorder}"
                              CornerRadius="6" Padding="10,7" />
                     <TextBlock x:Name="HostError"
                                Classes="field-error"
                                IsVisible="False"
-                               Text="Host address is required" />
+                               Text="{l:Tr hostedit.field.host.required}" />
                 </StackPanel>
 
                 <Grid ColumnDefinitions="100,*,*">
                     <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
-                        <TextBlock Text="Port" FontSize="12"
+                        <TextBlock Text="{l:Tr hostedit.field.port}" FontSize="12"
                                    Foreground="{DynamicResource SemiColorText2}" />
                         <TextBox Text="{Binding Port, Mode=TwoWay}"
                                  Background="{DynamicResource SemiColorFill0}"
@@ -140,10 +141,10 @@
                                  CornerRadius="6" Padding="10,7" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Grid.ColumnSpan="2" Spacing="4">
-                        <TextBlock Text="Username" FontSize="12"
+                        <TextBlock Text="{l:Tr hostedit.field.username}" FontSize="12"
                                    Foreground="{DynamicResource SemiColorText2}" />
                         <TextBox Text="{Binding Username, Mode=TwoWay}"
-                                 PlaceholderText="anonymous"
+                                 PlaceholderText="{l:Tr hostedit.field.username.placeholder}"
                                  Background="{DynamicResource SemiColorFill0}"
                                  BorderBrush="{DynamicResource SemiColorBorder}"
                                  CornerRadius="6" Padding="10,7" />
@@ -151,38 +152,60 @@
                 </Grid>
 
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Password" FontSize="12"
+                    <TextBlock Text="{l:Tr hostedit.field.password}" FontSize="12"
                                Foreground="{DynamicResource SemiColorText2}" />
                     <TextBox Text="{Binding Password, Mode=TwoWay}"
                              PasswordChar="&#x2022;"
-                             PlaceholderText="Enter password"
+                             PlaceholderText="{l:Tr hostedit.field.password.placeholder}"
                              Background="{DynamicResource SemiColorFill0}"
                              BorderBrush="{DynamicResource SemiColorBorder}"
                              CornerRadius="6" Padding="10,7" />
                 </StackPanel>
 
                 <StackPanel Spacing="4">
-                    <TextBlock Text="Tags" FontSize="12"
+                    <TextBlock Text="{l:Tr hostedit.field.tags}" FontSize="12"
                                Foreground="{DynamicResource SemiColorText2}" />
                     <TextBox Text="{Binding Tags, Mode=TwoWay}"
-                             PlaceholderText="prod, web"
+                             PlaceholderText="{l:Tr hostedit.field.tags.placeholder}"
                              Background="{DynamicResource SemiColorFill0}"
                              BorderBrush="{DynamicResource SemiColorBorder}"
                              CornerRadius="6" Padding="10,7" />
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{l:Tr hostedit.field.download_path}" FontSize="12"
+                               Foreground="{DynamicResource SemiColorText2}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding DownloadPath, Mode=TwoWay}"
+                                 PlaceholderText="{l:Tr hostedit.field.download_path.placeholder}"
+                                 Background="{DynamicResource SemiColorFill0}"
+                                 BorderBrush="{DynamicResource SemiColorBorder}"
+                                 CornerRadius="6" Padding="10,7" />
+                        <Button Grid.Column="1"
+                                Click="OnBrowseDownloadPathClick"
+                                Classes="dialog-btn-outline"
+                                Background="Transparent"
+                                BorderBrush="{DynamicResource SemiColorBorder}"
+                                BorderThickness="1"
+                                Foreground="{DynamicResource SemiColorText1}"
+                                Content="{l:Tr hostedit.field.download_path.browse}"
+                                CornerRadius="6" Padding="12,6" />
+                    </Grid>
                 </StackPanel>
             </StackPanel>
 
             <!-- Buttons — unified with RemoteEditWindow -->
             <StackPanel Grid.Row="2" Orientation="Horizontal"
                         HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
-                <Button Content="Cancel" Click="Cancel_Click"
+                <Button Content="{l:Tr hostedit.btn.cancel}" Click="Cancel_Click"
                         Classes="dialog-btn-outline"
                         Background="Transparent"
                         BorderBrush="{DynamicResource SemiColorBorder}"
                         BorderThickness="1"
                         Foreground="{DynamicResource SemiColorText1}"
                         CornerRadius="6" Padding="14,6" />
-                <Button Content="Save" Click="Ok_Click"
+                <Button Content="{l:Tr hostedit.btn.save}" Click="Ok_Click"
                         Classes="dialog-btn-primary"
                         Background="{DynamicResource SemiColorPrimary}"
                         Foreground="White"

@@ -1,0 +1,436 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:sy_ftp.ViewModels"
+        xmlns:models="using:sy_ftp.Models"
+        xmlns:pia="using:PhosphorIconsAvalonia.Markup"
+        xmlns:conv="using:sy_ftp.Converters"
+        xmlns:l="using:sy_ftp.Markup"
+        x:Class="sy_ftp.Views.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        x:Name="SettingsRoot"
+        Width="760" Height="520"
+        MinWidth="620" MinHeight="440"
+        WindowDecorations="None"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner"
+        Background="Transparent">
+
+    <Window.Resources>
+        <conv:HexToBrushConverter x:Key="HexToBrush" />
+        <conv:BoolInverter x:Key="BoolInverter" />
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Border.dialog-card">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+            <Style.Animations>
+                <Animation Duration="0:0:0.22" Easing="CubicEaseOut" FillMode="Forward">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.95" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.95" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.0" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.0" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <Style Selector="Button.dialog-btn-outline /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1Start}" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.dialog-btn-outline:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <Style Selector="Button.dialog-btn-outline:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill2}" />
+        </Style>
+
+        <!-- ── Sidebar nav buttons: mirror the sidebar-add / accent-text pattern ── -->
+        <Style Selector="Button.nav-item">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Margin" Value="0,2" />
+        </Style>
+        <Style Selector="Button.nav-item:pointerover">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.nav-item:pressed">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.nav-item /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1Start}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.nav-item:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <Style Selector="Button.nav-item:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill2}" />
+        </Style>
+        <!-- Active (selected) state -->
+        <Style Selector="Button.nav-item.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="Button.nav-item.active:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightPointerover}" />
+        </Style>
+
+        <!-- Accent swatch halo -->
+        <Style Selector="Button.accent-swatch /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="Button.accent-swatch:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.swatch-halo">
+            <Setter Property="BoxShadow" Value="0 0 0 0 Transparent" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.22" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.accent-swatch:pointerover Border.swatch-halo">
+            <Setter Property="BoxShadow" Value="0 0 12 3 #66FFFFFF" />
+        </Style>
+
+        <!-- Language ComboBox popup + items (matching TagComboBox accent treatment) -->
+        <Style Selector="ComboBox.lang-combo /template/ Popup Border">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Setter Property="BoxShadow" Value="0 4 16 0 #28000000" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+        </Style>
+        <Style Selector="ComboBox.lang-combo ComboBoxItem">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="4,2" />
+            <Setter Property="Padding" Value="8,5" />
+        </Style>
+        <Style Selector="ComboBox.lang-combo ComboBoxItem /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Transitions">
+                <Transitions />
+            </Setter>
+        </Style>
+        <Style Selector="ComboBox.lang-combo ComboBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+        </Style>
+        <Style Selector="ComboBox.lang-combo ComboBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimary}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="ComboBox.lang-combo ComboBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryPointerover}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <!-- RadioButton accent (circle uses SemiColorPrimary) -->
+        <Style Selector="RadioButton.theme-radio">
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText1}" />
+        </Style>
+    </Window.Styles>
+
+    <Border x:Name="CardBorder"
+            Classes="dialog-card"
+            CornerRadius="12" Margin="8"
+            Background="{DynamicResource SemiColorBackground1}"
+            BorderBrush="{DynamicResource SemiColorBorder}"
+            BorderThickness="1"
+            ClipToBounds="True">
+        <Border.RenderTransform>
+            <ScaleTransform ScaleX="1" ScaleY="1" />
+        </Border.RenderTransform>
+
+        <Grid RowDefinitions="44,*,Auto">
+
+            <!-- Title bar -->
+            <Border Grid.Row="0"
+                    Background="Transparent"
+                    PointerPressed="OnTitleBarDrag">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                                VerticalAlignment="Center">
+                        <PathIcon Data="{pia:IconGeometry Icon=gear, IconType=fill}"
+                                  Width="16" Height="16"
+                                  Foreground="{DynamicResource SemiColorPrimary}" />
+                        <TextBlock Text="{l:Tr settings.title}"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SemiColorText0}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Click="OnCloseClick"
+                            Classes="dialog-btn-outline"
+                            Background="Transparent" BorderThickness="0"
+                            Padding="6" CornerRadius="6"
+                            VerticalAlignment="Center">
+                        <PathIcon Data="{pia:IconGeometry Icon=x, IconType=regular}"
+                                  Width="14" Height="14"
+                                  Foreground="{DynamicResource SemiColorText2}" />
+                    </Button>
+                </Grid>
+            </Border>
+            <Rectangle Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                       Fill="{DynamicResource SemiColorBorder}" />
+
+            <!-- Body: sidebar + content -->
+            <Grid Grid.Row="1" ColumnDefinitions="190,1,*">
+
+                <!-- Sidebar (hand-coded buttons — one per section, each with its own icon) -->
+                <StackPanel Grid.Column="0" Spacing="0" Margin="10">
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsGeneralSelected}"
+                            Click="OnNavGeneralClick">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <PathIcon Data="{pia:IconGeometry Icon=translate, IconType=regular}"
+                                      Width="15" Height="15"
+                                      Foreground="{DynamicResource SemiColorText1}" />
+                            <TextBlock Text="{l:Tr settings.section.general}"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SemiColorText0}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsAppearanceSelected}"
+                            Click="OnNavAppearanceClick">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <PathIcon Data="{pia:IconGeometry Icon=palette, IconType=regular}"
+                                      Width="15" Height="15"
+                                      Foreground="{DynamicResource SemiColorText1}" />
+                            <TextBlock Text="{l:Tr settings.section.appearance}"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SemiColorText0}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsPathsSelected}"
+                            Click="OnNavPathsClick">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <PathIcon Data="{pia:IconGeometry Icon=folder_open, IconType=regular}"
+                                      Width="15" Height="15"
+                                      Foreground="{DynamicResource SemiColorText1}" />
+                            <TextBlock Text="{l:Tr settings.section.paths}"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SemiColorText0}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <Rectangle Grid.Column="1" Fill="{DynamicResource SemiColorBorder}" />
+
+                <!-- Content panels -->
+                <ScrollViewer Grid.Column="2" Padding="22,18" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="22">
+
+                        <!-- General -->
+                        <StackPanel Spacing="10"
+                                    IsVisible="{Binding IsGeneralSelected}">
+                            <TextBlock Text="{l:Tr settings.section.general}"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SemiColorText0}" />
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{l:Tr settings.language}" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText2}" />
+                                <ComboBox Classes="lang-combo"
+                                          ItemsSource="{Binding Languages}"
+                                          SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
+                                          HorizontalAlignment="Left"
+                                          MaxWidth="320" MinWidth="220"
+                                          BorderThickness="1"
+                                          BorderBrush="{DynamicResource SemiColorBorder}"
+                                          Background="{DynamicResource SemiColorFill0}"
+                                          CornerRadius="8"
+                                          Padding="10,5">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:LanguageOption">
+                                            <TextBlock Text="{Binding Display}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Appearance -->
+                        <StackPanel Spacing="14"
+                                    IsVisible="{Binding IsAppearanceSelected}">
+                            <TextBlock Text="{l:Tr settings.section.appearance}"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SemiColorText0}" />
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{l:Tr settings.theme}" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText2}" />
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <RadioButton Classes="theme-radio"
+                                                 GroupName="ThemeMode"
+                                                 Content="{l:Tr settings.theme.light}"
+                                                 IsChecked="{Binding IsLightMode, Mode=TwoWay}" />
+                                    <RadioButton Classes="theme-radio"
+                                                 GroupName="ThemeMode"
+                                                 Content="{l:Tr settings.theme.dark}"
+                                                 IsChecked="{Binding IsDarkMode, Mode=TwoWay}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{l:Tr settings.accent}" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText2}" />
+                                <TextBlock Text="{l:Tr settings.accent.hint}" FontSize="11"
+                                           Foreground="{DynamicResource SemiColorText3}"
+                                           TextWrapping="Wrap" />
+                                <!-- Fixed 9-column grid: 9 × 36 = 324 px, comfortably fits the 500-px content column -->
+                                <ItemsControl ItemsSource="{Binding Palette}"
+                                              HorizontalAlignment="Left">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="9" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:AccentColorOption">
+                                            <Button Classes="accent-swatch"
+                                                    Command="{Binding DataContext.PickAccentCommand, ElementName=SettingsRoot}"
+                                                    CommandParameter="{Binding}"
+                                                    Width="32" Height="32"
+                                                    Padding="0" Margin="0,0,4,4"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    CornerRadius="16"
+                                                    ToolTip.Tip="{Binding Name}">
+                                                <Border Classes="swatch-halo"
+                                                        Width="24" Height="24"
+                                                        CornerRadius="12"
+                                                        Background="{Binding Hex, Converter={StaticResource HexToBrush}}"
+                                                        BorderBrush="{DynamicResource SemiColorBorder}"
+                                                        BorderThickness="1" />
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Paths -->
+                        <StackPanel Spacing="18"
+                                    IsVisible="{Binding IsPathsSelected}">
+                            <TextBlock Text="{l:Tr settings.section.paths}"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SemiColorText0}" />
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{l:Tr settings.path.download}" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText2}" />
+                                <TextBlock Text="{l:Tr settings.path.download.hint}" FontSize="11"
+                                           Foreground="{DynamicResource SemiColorText3}"
+                                           TextWrapping="Wrap" />
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding DefaultDownloadPath, Mode=OneWay}"
+                                             IsReadOnly="True"
+                                             Background="{DynamicResource SemiColorFill0}"
+                                             BorderBrush="{DynamicResource SemiColorBorder}"
+                                             CornerRadius="6" Padding="10,7" />
+                                    <Button Grid.Column="1"
+                                            Command="{Binding BrowseDownloadCommand}"
+                                            Classes="dialog-btn-outline"
+                                            Background="Transparent"
+                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                            BorderThickness="1"
+                                            Foreground="{DynamicResource SemiColorText1}"
+                                            Content="{l:Tr settings.path.browse}"
+                                            CornerRadius="6" Padding="14,6" />
+                                    <Button Grid.Column="2"
+                                            Command="{Binding ResetDownloadCommand}"
+                                            Classes="dialog-btn-outline"
+                                            Background="Transparent"
+                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                            BorderThickness="1"
+                                            Foreground="{DynamicResource SemiColorText1}"
+                                            Content="{l:Tr settings.path.reset}"
+                                            CornerRadius="6" Padding="14,6" />
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{l:Tr settings.path.data}" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText2}" />
+                                <TextBlock Text="{l:Tr settings.path.data.hint}" FontSize="11"
+                                           Foreground="{DynamicResource SemiColorText3}"
+                                           TextWrapping="Wrap" />
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding DefaultDataPath, Mode=OneWay}"
+                                             IsReadOnly="True"
+                                             Background="{DynamicResource SemiColorFill0}"
+                                             BorderBrush="{DynamicResource SemiColorBorder}"
+                                             CornerRadius="6" Padding="10,7" />
+                                    <Button Grid.Column="1"
+                                            Command="{Binding BrowseDataCommand}"
+                                            Classes="dialog-btn-outline"
+                                            Background="Transparent"
+                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                            BorderThickness="1"
+                                            Foreground="{DynamicResource SemiColorText1}"
+                                            Content="{l:Tr settings.path.browse}"
+                                            CornerRadius="6" Padding="14,6" />
+                                    <Button Grid.Column="2"
+                                            Command="{Binding ResetDataCommand}"
+                                            Classes="dialog-btn-outline"
+                                            Background="Transparent"
+                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                            BorderThickness="1"
+                                            Foreground="{DynamicResource SemiColorText1}"
+                                            Content="{l:Tr settings.path.reset}"
+                                            CornerRadius="6" Padding="14,6" />
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Footer -->
+            <Border Grid.Row="2"
+                    BorderBrush="{DynamicResource SemiColorBorder}"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button Content="{l:Tr settings.btn.close}" Click="OnCloseClick"
+                            Classes="dialog-btn-outline"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="1"
+                            Foreground="{DynamicResource SemiColorText1}"
+                            CornerRadius="6" Padding="14,6" />
+                </StackPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>
