@@ -42,6 +42,14 @@ public partial class MainWindow : Window
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
+        // macOS: attach empty NSToolbar to thicken titlebar and center traffic lights
+        if (OperatingSystem.IsMacOS())
+        {
+            var handle = this.TryGetPlatformHandle();
+            if (handle is not null)
+                MacWindowTitleBar.Apply(handle.Handle);
+        }
+
         HostListBox.DoubleTapped += OnHostDoubleTapped;
         WirePopupBackgrounds();
 
@@ -54,6 +62,32 @@ public partial class MainWindow : Window
             RoutingStrategies.Tunnel, handledEventsToo: true);
         FileListBox.AddHandler(InputElement.PointerReleasedEvent, OnFileListPointerReleased,
             RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (!OperatingSystem.IsMacOS()) return;
+        if (change.Property != WindowStateProperty) return;
+
+        if (WindowState == Avalonia.Controls.WindowState.FullScreen)
+        {
+            // 进入全屏：移除 NSToolbar，避免 macOS 灰色条遮挡自定义标题栏
+            var handle = this.TryGetPlatformHandle();
+            if (handle is not null)
+                MacWindowTitleBar.Remove(handle.Handle);
+        }
+        else
+        {
+            // 退出全屏：恢复 NSToolbar
+            Dispatcher.Post(() =>
+            {
+                var handle = this.TryGetPlatformHandle();
+                if (handle is not null)
+                    MacWindowTitleBar.Apply(handle.Handle);
+            }, DispatcherPriority.Background);
+        }
     }
 
     private bool _pendingOverflowCheck;

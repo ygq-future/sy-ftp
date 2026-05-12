@@ -13,3 +13,6 @@ obj/
 
 ## Claude Code
 .claude/settings.local.json
+
+## DeepSeek
+.deepseek/
