@@ -31,6 +31,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // macOS: reserve space for traffic lights (red/yellow/green)
+        if (OperatingSystem.IsMacOS())
+        {
+            MacTrafficLightSpacer.Width = 76;
+        }
+
         Loaded += OnLoaded;
     }
 
@@ -535,5 +541,22 @@ public partial class MainWindow : Window
         var files = DragDropHelper.GetDroppedFiles(e).ToList();
         if (files.Count == 0) return;
         await vm.FileBrowser.UploadViaDragDropAsync(files, CancellationToken.None);
+    }
+
+    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Only trigger window drag on left button, and only if the event hasn't been
+        // consumed by a child control (button, toggle, etc.)
+        if (e.Handled) return;
+        var point = e.GetCurrentPoint(this);
+        if (!point.Properties.IsLeftButtonPressed) return;
+
+        // Don't drag if the pointer is over an interactive control
+        if (e.Source is Control source &&
+            source.FindAncestorOfType<Button>() == null &&
+            source.FindAncestorOfType<ToggleButton>() == null)
+        {
+            BeginMoveDrag(e);
+        }
     }
 }

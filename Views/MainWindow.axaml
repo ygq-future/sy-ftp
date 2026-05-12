@@ -15,6 +15,8 @@
         x:Name="RootWindow"
         Icon="/Assets/sy-ftp.ico"
         Title="SY-FTP"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="-1"
         Topmost="{Binding IsTopmost}"
         Width="900" Height="560"
         MinWidth="680" MinHeight="440"
@@ -460,10 +462,14 @@
              ══════════════════════════════════════════ -->
         <Grid Grid.Row="0"
               Background="{DynamicResource SemiColorBackground1}"
-              ColumnDefinitions="Auto,Auto,*,Auto">
+              ColumnDefinitions="Auto,Auto,Auto,*,Auto"
+              PointerPressed="OnTitleBarPointerPressed">
+
+            <!-- macOS traffic light spacer (width set in code-behind on macOS) -->
+            <Border x:Name="MacTrafficLightSpacer" Grid.Column="0" Width="0" />
 
             <!-- Left: Connect / Disconnect -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0">
                 <Button Command="{Binding ConnectCommand}"
                         IsEnabled="{Binding IsNotConnected}"
                         Classes="accent-text"
@@ -497,12 +503,12 @@
             </StackPanel>
 
             <!-- Separator -->
-            <Rectangle Grid.Column="1"
+            <Rectangle Grid.Column="2"
                        Width="1" Margin="8,8"
                        Fill="{DynamicResource SemiColorBorder}" />
 
             <!-- Middle: file actions -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4">
                 <Button Command="{Binding FileBrowser.RefreshCommand}"
                         IsEnabled="{Binding IsConnected}"
                         Classes="accent-text"
@@ -517,7 +523,7 @@
             </StackPanel>
 
             <!-- Right: theme / pin / settings toggles -->
-            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="1" Margin="0,0,2,0">
+            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="1" Margin="0,0,2,0">
 
                 <Button Command="{Binding ToggleThemeCommand}"
                         Classes="accent-text"

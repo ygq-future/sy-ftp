@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Native;
 using System;
 
 namespace sy_ftp;
@@ -13,6 +14,14 @@ sealed class Program
     {
         var builder = AppBuilder.Configure<App>()
             .UsePlatformDetect();
+
+        if (OperatingSystem.IsMacOS())
+        {
+            builder = builder.With(new AvaloniaNativePlatformOptions
+            {
+                RenderingMode = [AvaloniaNativeRenderingMode.Software]
+            });
+        }
 
         if (OperatingSystem.IsWindows())
         {
