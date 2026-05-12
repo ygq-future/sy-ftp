@@ -19,6 +19,10 @@
 
         <!-- ReadyToRun 提升启动速度 -->
         <PublishReadyToRun>true</PublishReadyToRun>
+
+        <!-- 关闭调试符号 -->
+        <DebugType>none</DebugType>
+        <DebugSymbols>false</DebugSymbols>
     </PropertyGroup>
 
     <ItemGroup>
