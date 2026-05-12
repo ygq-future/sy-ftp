@@ -11,7 +11,6 @@ using Avalonia.VisualTree;
 using sy_ftp.Helpers;
 using sy_ftp.Models;
 using sy_ftp.ViewModels;
-
 namespace sy_ftp.Views;
 
 public partial class MainWindow : Window
@@ -30,10 +29,6 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        ExtendClientAreaToDecorationsHint = true;
-        ExtendClientAreaTitleBarHeightHint = -1;
-        WindowDecorations = WindowDecorations.BorderOnly;
-
         InitializeComponent();
 
         Loaded += OnLoaded;
@@ -174,23 +169,6 @@ public partial class MainWindow : Window
                 break;
         }
     }
-
-    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
-    }
-
-    private void OnMinimizeClick(object? sender, RoutedEventArgs e)
-        => WindowState = WindowState.Minimized;
-
-    private void OnMaximizeClick(object? sender, RoutedEventArgs e)
-        => WindowState = WindowState == WindowState.Maximized
-            ? WindowState.Normal
-            : WindowState.Maximized;
-
-    private void OnCloseClick(object? sender, RoutedEventArgs e)
-        => Close();
 
     private async void OnCopyPathClick(object? sender, RoutedEventArgs e)
     {
