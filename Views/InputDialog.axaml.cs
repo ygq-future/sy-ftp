@@ -54,10 +54,10 @@ public partial class InputDialog : Window
         set => base.Title = value;
     }
 
-    private void SetError(bool hasError, string message = "Name cannot be empty")
+    private void SetError(bool hasError, string? message = null)
     {
         ErrorText.IsVisible = hasError;
-        ErrorText.Text = message;
+        ErrorText.Text = message ?? sy_ftp.Services.LocalizationService.Instance.Tr("input.error.required");
         if (hasError)
         {
             if (!InputBox.Classes.Contains("error")) InputBox.Classes.Add("error");

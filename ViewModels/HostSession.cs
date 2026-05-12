@@ -7,6 +7,7 @@ namespace sy_ftp.ViewModels;
 public class HostSession
 {
     public required Guid HostId { get; init; }
+    public required FtpHost Host { get; init; }
     public required IFtpService Ftp { get; init; }
     public string CurrentPath { get; set; } = "/";
 }

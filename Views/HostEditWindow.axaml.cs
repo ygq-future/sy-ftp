@@ -4,9 +4,11 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using sy_ftp.Models;
+using sy_ftp.Services;
 
 namespace sy_ftp.Views
 {
@@ -17,6 +19,7 @@ namespace sy_ftp.Views
             InitializeComponent();
             ApplyShadow();
             ActualThemeVariantChanged += (_, _) => ApplyShadow();
+            Opened += OnWindowOpened;
 
             NameBox.TextChanged += (_, _) =>
             {
@@ -28,6 +31,16 @@ namespace sy_ftp.Views
                 if (!string.IsNullOrWhiteSpace(HostBox.Text))
                     SetFieldError(HostBox, HostError, false);
             };
+        }
+
+        private void OnWindowOpened(object? sender, System.EventArgs e)
+        {
+            // Pre-fill DownloadPath with the current global default when the host
+            // hasn't set one, so users see a concrete path instead of a blank field.
+            if (DataContext is FtpHost host && string.IsNullOrWhiteSpace(host.DownloadPath))
+            {
+                host.DownloadPath = SettingsService.Current.DefaultDownloadPath;
+            }
         }
 
         private void ApplyShadow()
@@ -78,6 +91,16 @@ namespace sy_ftp.Views
         private void Cancel_Click(object? sender, RoutedEventArgs e)
         {
             Close(false);
+        }
+
+        private async void OnBrowseDownloadPathClick(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is not FtpHost host) return;
+            var folders = await StorageProvider.OpenFolderPickerAsync(
+                new Avalonia.Platform.Storage.FolderPickerOpenOptions { AllowMultiple = false });
+            if (folders.Count == 0) return;
+            var path = folders[0].TryGetLocalPath();
+            if (!string.IsNullOrEmpty(path)) host.DownloadPath = path;
         }
 
         private void OnCardDrag(object? sender, PointerPressedEventArgs e)

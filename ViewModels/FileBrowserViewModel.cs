@@ -49,6 +49,9 @@ public partial class FileBrowserViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PathSegments))]
+    [NotifyPropertyChangedFor(nameof(ParentPath))]
+    [NotifyPropertyChangedFor(nameof(ItemCountDisplay))]
     private ObservableCollection<RemoteFile> _files = [];
 
     [ObservableProperty]
@@ -83,7 +86,15 @@ public partial class FileBrowserViewModel : ViewModelBase
     private RemoteFile? _selectedFile;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LastSyncDisplay))]
     private string _lastSyncTime = "";
+
+    public string LastSyncDisplay => string.IsNullOrEmpty(LastSyncTime)
+        ? ""
+        : Services.LocalizationService.Instance.Tr("file.synced", LastSyncTime);
+
+    public string ItemCountDisplay
+        => Services.LocalizationService.Instance.Tr("file.items", Files.Count);
 
     private readonly Dictionary<string, (IDisposable Watcher, bool[] Valid)> _activeWatchers = [];
 
@@ -216,6 +227,12 @@ public partial class FileBrowserViewModel : ViewModelBase
     {
         _ftp = ftp;
         _fileWatcher = fileWatcher;
+        _files.CollectionChanged += (_, _) => OnPropertyChanged(nameof(ItemCountDisplay));
+        Services.LocalizationService.Instance.LanguageChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(ItemCountDisplay));
+            OnPropertyChanged(nameof(LastSyncDisplay));
+        };
     }
 
     partial void OnCurrentPathChanged(string value) => IsPathOverflowing = false;
@@ -325,8 +342,27 @@ public partial class FileBrowserViewModel : ViewModelBase
         var list = ResolveSelectedList();
         if (list.Count == 0) return;
 
+        var target = ResolveDownloadDir();
+        Directory.CreateDirectory(target);
+        await DownloadListAsync(list, target, ct);
+    }
+
+    /// <summary>
+    /// Resolution order: per-host DownloadPath → global AppSettings.DefaultDownloadPath
+    /// → %UserProfile%\Downloads\SY-FTP (FtpPathHelper.Ensure).
+    /// </summary>
+    private string ResolveDownloadDir()
+    {
+        var host = _activeSession?.Host;
+        if (host is not null && !string.IsNullOrWhiteSpace(host.DownloadPath))
+            return host.DownloadPath!;
+
+        var global = Services.SettingsService.Current.DefaultDownloadPath;
+        if (!string.IsNullOrWhiteSpace(global))
+            return global!;
+
         FtpPathHelper.Ensure();
-        await DownloadListAsync(list, FtpPathHelper.DefaultDownloadDir, ct);
+        return FtpPathHelper.DefaultDownloadDir;
     }
 
     [RelayCommand]
@@ -343,7 +379,7 @@ public partial class FileBrowserViewModel : ViewModelBase
         var folders = await mainWindow.StorageProvider.OpenFolderPickerAsync(
             new Avalonia.Platform.Storage.FolderPickerOpenOptions
             {
-                Title = "Choose download folder",
+                Title = Services.LocalizationService.Instance.Tr("download.choose_folder"),
                 AllowMultiple = false
             });
         if (folders.Count == 0) return;
@@ -369,6 +405,7 @@ public partial class FileBrowserViewModel : ViewModelBase
         DownloadedBytes = 0;
         TotalDownloadBytes = 0;
 
+        var loc = Services.LocalizationService.Instance;
         try
         {
             for (int i = 0; i < list.Count; i++)
@@ -376,16 +413,16 @@ public partial class FileBrowserViewModel : ViewModelBase
                 ct.ThrowIfCancellationRequested();
                 var file = list[i];
                 var label = list.Count > 1
-                    ? $"{file.Name} ({i + 1}/{list.Count})"
+                    ? loc.Tr("download.multi.label", file.Name, i + 1, list.Count)
                     : file.Name;
-                DownloadStatusText = $"Downloading {label}...";
+                DownloadStatusText = loc.Tr("download.single", label);
 
                 int index = i;
                 int total = list.Count;
                 var progress = new Progress<double>(pct =>
                 {
                     DownloadProgress = (index * 100.0 + pct) / total;
-                    DownloadStatusText = $"Downloading {label}... {pct:F0}%";
+                    DownloadStatusText = loc.Tr("download.single.pct", label, pct);
                 });
 
                 if (file.IsDirectory)
@@ -402,8 +439,8 @@ public partial class FileBrowserViewModel : ViewModelBase
 
             DownloadProgress = 100;
             DownloadStatusText = list.Count > 1
-                ? $"Downloaded {list.Count} items"
-                : $"Downloaded {list[0].Name}";
+                ? loc.Tr("download.done.multi", list.Count)
+                : loc.Tr("download.done.single", list[0].Name);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
@@ -461,10 +498,12 @@ public partial class FileBrowserViewModel : ViewModelBase
         var mainWindow = lifetime?.MainWindow;
         if (mainWindow is null) return;
 
+        var loc = Services.LocalizationService.Instance;
         string message = files.Count == 1
-            ? $"Delete \"{files[0].Name}\"? This cannot be undone."
-            : $"Delete {files.Count} items? This cannot be undone.";
-        var confirmed = await Views.ConfirmDialog.ShowAsync(mainWindow, "Confirm delete", message);
+            ? loc.Tr("confirm.delete.single", files[0].Name)
+            : loc.Tr("confirm.delete.multi", files.Count);
+        var confirmed = await Views.ConfirmDialog.ShowAsync(mainWindow,
+            loc.Tr("confirm.delete.title"), message, loc.Tr("confirm.delete.btn"));
         if (!confirmed) return;
 
         try
@@ -543,8 +582,10 @@ public partial class FileBrowserViewModel : ViewModelBase
         var mainWindow = lifetime?.MainWindow;
         if (mainWindow is null) return;
 
-        var message = $"Delete \"{file.Name}\"? This cannot be undone.";
-        var confirmed = await Views.ConfirmDialog.ShowAsync(mainWindow, "Confirm delete", message);
+        var loc = Services.LocalizationService.Instance;
+        var message = loc.Tr("confirm.delete.single", file.Name);
+        var confirmed = await Views.ConfirmDialog.ShowAsync(mainWindow,
+            loc.Tr("confirm.delete.title"), message, loc.Tr("confirm.delete.btn"));
         if (!confirmed) return;
 
         try
@@ -571,7 +612,8 @@ public partial class FileBrowserViewModel : ViewModelBase
             var mainWindow = lifetime?.MainWindow;
             if (mainWindow is null) return;
 
-            var dlg = new Views.InputDialog { Header = "New Folder", Label = "Folder name" };
+            var loc = Services.LocalizationService.Instance;
+            var dlg = new Views.InputDialog { Header = loc.Tr("input.new_folder.title"), Label = loc.Tr("input.new_folder.label") };
             var result = await dlg.ShowDialog<bool?>(mainWindow);
             if (result != true) return;
 
@@ -595,7 +637,8 @@ public partial class FileBrowserViewModel : ViewModelBase
             var mainWindow = lifetime?.MainWindow;
             if (mainWindow is null) return;
 
-            var dlg = new Views.InputDialog { Header = "New File", Label = "File name" };
+            var loc = Services.LocalizationService.Instance;
+            var dlg = new Views.InputDialog { Header = loc.Tr("input.new_file.title"), Label = loc.Tr("input.new_file.label") };
             var result = await dlg.ShowDialog<bool?>(mainWindow);
             if (result != true) return;
 
@@ -640,11 +683,12 @@ public partial class FileBrowserViewModel : ViewModelBase
 
             var watcher = _fileWatcher.StartWatching(tempPath, async _ =>
             {
+                var loc = Services.LocalizationService.Instance;
                 if (!valid[0])
                 {
                     await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        ErrorMessage = "Connection lost — this edit session is invalid. Reconnect and open the file again.";
+                        ErrorMessage = loc.Tr("error.watcher_invalid");
                     });
                     return;
                 }
@@ -663,7 +707,7 @@ public partial class FileBrowserViewModel : ViewModelBase
                     valid[0] = false;
                     await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        ErrorMessage = "Upload failed — connection may have dropped. Reconnect and open the file again.";
+                        ErrorMessage = loc.Tr("error.upload_failed");
                     });
                 }
             });
@@ -675,7 +719,7 @@ public partial class FileBrowserViewModel : ViewModelBase
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            ErrorMessage = $"Remote edit failed: {ex.Message}";
+            ErrorMessage = Services.LocalizationService.Instance.Tr("error.remote_edit", ex.Message);
         }
         finally
         {
