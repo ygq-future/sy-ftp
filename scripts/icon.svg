@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SY-FTP app icon. Source of truth; edit here, then re-run scripts/generate_icons.py. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Tile gradient: violet (top-left) → pink (bottom-right). -->
+    <linearGradient id="tileGrad" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+
+    <!-- Folder gradient: amber-300 → amber-500, top to bottom of folder region. -->
+    <linearGradient id="folderGrad" x1="0" y1="290" x2="0" y2="775" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FCD34D"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+
+    <!-- Back-panel gradient: a touch darker than the front so the exposed
+         strip (above the front panel) reads as "inside" the folder. -->
+    <linearGradient id="folderBackGrad" x1="0" y1="290" x2="0" y2="775" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F5B533"/>
+      <stop offset="1" stop-color="#D97706"/>
+    </linearGradient>
+
+    <!-- Tinted drop shadow behind the folder (violet-950, not black). -->
+    <filter id="folderShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#1E0B3C" flood-opacity="0.4"/>
+    </filter>
+
+    <!-- Drop shadow behind the badge: soft, diffuse, lightly tinted. -->
+    <filter id="badgeShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#1E0B3C" flood-opacity="0.38"/>
+    </filter>
+
+    <!-- Very light shadow beneath the arrows — just enough to anchor them
+         inside the badge without reading as embossed. -->
+    <filter id="arrowShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#1E0B3C" flood-opacity="0.28"/>
+    </filter>
+
+    <!-- Outer ambient glow behind the tile (lives in the 40px artboard padding). -->
+    <filter id="tileGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="28"/>
+    </filter>
+
+    <!-- Badge fill: same violet→pink palette as the tile, but re-projected
+         onto the badge's own bounding box so the gradient reads in full
+         within the small circle (more violet top-left, more pink bottom-right).
+         Same hues as the tile — the badge belongs to the same family — but
+         locally saturated so it stays visible against the tile. -->
+    <linearGradient id="badgeFill" x1="640" y1="630" x2="920" y2="910" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+
+    <!-- Clip everything drawn on top of the tile to the tile's rounded-square. -->
+    <clipPath id="tileClip">
+      <rect x="40" y="40" width="944" height="944" rx="217" ry="217"/>
+    </clipPath>
+
+    <!-- Clip for the badge's subtle top highlight. -->
+    <clipPath id="badgeClip">
+      <circle cx="780" cy="770" r="140"/>
+    </clipPath>
+  </defs>
+
+  <!-- 0. Outer ambient glow: a blurred, slightly expanded copy of the tile shape. -->
+  <rect x="24" y="32" width="976" height="976" rx="233" ry="233"
+        fill="url(#tileGrad)" fill-opacity="0.55" filter="url(#tileGlow)"/>
+
+  <!-- 1. Base tile (rounded squircle) -->
+  <rect x="40" y="40" width="944" height="944" rx="217" ry="217" fill="url(#tileGrad)"/>
+
+  <!-- 2. Inner rim: faint white stroke inset by 1px for a glass-edge feel. -->
+  <rect x="42" y="42" width="940" height="940" rx="215" ry="215"
+        fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="2"/>
+
+  <!-- 3. Soft frosted highlight across the top of the tile. -->
+  <g clip-path="url(#tileClip)">
+    <ellipse cx="512" cy="60" rx="560" ry="230" fill="#FFFFFF" fill-opacity="0.12"/>
+  </g>
+
+  <!-- 4. Folder (back panel with tab + front panel), tinted drop shadow. -->
+  <g clip-path="url(#tileClip)" filter="url(#folderShadow)">
+    <!-- Back panel: rounded rectangle with a trapezoidal tab on top-left.
+         Uses a slightly darker amber gradient so the strip of back panel
+         that peeks above the front reads as the folder's interior. -->
+    <path d="M 212 290
+             L 340 290
+             L 380 330
+             L 822 330
+             Q 842 330 842 350
+             L 842 740
+             Q 842 760 822 760
+             L 212 760
+             Q 192 760 192 740
+             L 192 310
+             Q 192 290 212 290 Z"
+          fill="url(#folderBackGrad)"/>
+    <!-- Front panel: drawn lower so a wider strip of the back panel is
+         visible — the folder reads as "open", contents slightly exposed. -->
+    <rect x="180" y="430" width="674" height="345" rx="28" ry="28" fill="url(#folderGrad)"/>
+  </g>
+
+  <!-- 5. Front-panel top highlight (drawn after shadow so it stays crisp). -->
+  <rect x="186" y="430" width="662" height="3" rx="1.5" ry="1.5"
+        fill="#FFFFFF" fill-opacity="0.32"/>
+
+  <!-- 5a. Subtle inner shadow along the back-panel's bottom-of-strip edge,
+       sells the "open, contents peeking out" reading at the gap. -->
+  <rect x="192" y="414" width="650" height="18" rx="9" ry="9"
+        fill="#1E0B3C" fill-opacity="0.10"/>
+
+  <!-- 6. Transfer badge — solid gradient chip nudged up-left from the tile's
+       bottom-right so right/bottom tile edges keep a healthy margin.
+       Center (780, 770), radius 140 → right edge 920 (64px from tile right
+       edge), bottom edge 910 (74px from tile bottom). About half of the
+       badge overlaps the folder; the other half floats on the tile.
+  -->
+  <!-- 6a. Soft drop shadow behind the badge, gives it lift like a 3D chip. -->
+  <g filter="url(#badgeShadow)">
+    <circle cx="780" cy="770" r="140" fill="url(#badgeFill)"/>
+  </g>
+
+  <!-- 6b. Very subtle top highlight so the badge surface doesn't read flat. -->
+  <g clip-path="url(#badgeClip)">
+    <ellipse cx="780" cy="665" rx="120" ry="44" fill="#FFFFFF" fill-opacity="0.18"/>
+  </g>
+
+  <!-- 6c. Thin white border — the defining 3D cue from the reference. -->
+  <circle cx="780" cy="770" r="139" fill="none"
+          stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="3"/>
+
+  <!-- 7-8. Transfer arrows: two compact filled arrows inside the badge,
+       white fill, modern proportions. -->
+  <!-- 7. Up arrow (left), centered at x=738, y=770. -->
+  <path d="M 738 695
+           L 778 757
+           L 755 757
+           L 755 845
+           L 721 845
+           L 721 757
+           L 698 757 Z"
+        fill="#FFFFFF"/>
+
+  <!-- 8. Down arrow (right), centered at x=822, y=770. -->
+  <path d="M 822 845
+           L 782 783
+           L 805 783
+           L 805 695
+           L 839 695
+           L 839 783
+           L 862 783 Z"
+        fill="#FFFFFF"/>
+</svg>
