@@ -25,6 +25,15 @@
         <DebugSymbols>false</DebugSymbols>
     </PropertyGroup>
 
+    <!-- 删除调试文件 -->
+    <Target Name="RemoveDebugSymbols" AfterTargets="Publish">
+        <ItemGroup>
+            <DebugFiles Include="$(PublishDir)**\*.pdb" />
+        </ItemGroup>
+
+        <Delete Files="@(DebugFiles)" />
+    </Target>
+    
     <ItemGroup>
         <Folder Include="Models\" />
         <AvaloniaResource Include="Assets\**" />
