@@ -45,4 +45,17 @@
         <PackageReference Include="SSH.NET" Version="2025.1.0" />
         <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
     </ItemGroup>
+
+    <!-- Suppress NuGet vulnerability audit warnings (NU1900) on macOS:
+         dotnet processes launched from iTerm2 cannot write to the NuGet http-cache
+         due to macOS TCC restrictions. This is a known issue:
+         https://github.com/NuGet/Home/issues/13071 -->
+    <PropertyGroup>
+        <NuGetAudit>false</NuGetAudit>
+    </PropertyGroup>
+
+    <!-- Suppress Avalonia.BuildServices telemetry task (macOS TCC denies log file) -->
+    <ItemGroup>
+        <PackageReference Include="Avalonia.BuildServices" Version="11.3.2" ExcludeAssets="build;buildTransitive" />
+    </ItemGroup>
 </Project>

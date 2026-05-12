@@ -42,6 +42,14 @@ public partial class MainWindow : Window
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
+        // macOS: attach empty NSToolbar to thicken titlebar and center traffic lights
+        if (OperatingSystem.IsMacOS())
+        {
+            var handle = this.TryGetPlatformHandle();
+            if (handle is not null)
+                MacWindowTitleBar.Apply(handle.Handle);
+        }
+
         HostListBox.DoubleTapped += OnHostDoubleTapped;
         WirePopupBackgrounds();
 
