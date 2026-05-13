@@ -474,6 +474,9 @@
 
             <!-- Left: Connect / Disconnect -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0">
+                <!-- macOS 红绿灯留白 -->
+                <Border x:Name="MacTrafficLightSpacer" Width="0" />
+
                 <Button Command="{Binding ConnectCommand}"
                         IsEnabled="{Binding IsNotConnected}"
                         Classes="accent-text"
@@ -527,7 +530,8 @@
             </StackPanel>
 
             <!-- Right: theme / pin / settings toggles -->
-            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="1" Margin="0,0,2,0">
+            <StackPanel x:Name="RightButtonGroup"
+                        Grid.Column="3" Orientation="Horizontal" Spacing="1" Margin="0,0,2,0">
 
                 <Button Command="{Binding ToggleThemeCommand}"
                         Classes="accent-text"
@@ -597,7 +601,8 @@
             <!-- Column 4: custom min / max / close buttons.
                  WindowDecorations="Full" keeps WS_CAPTION for DWM animations,
                  but Avalonia no longer draws native buttons, so we supply our own. -->
-            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="1" Margin="2,0,6,0">
+            <StackPanel x:Name="CustomWindowControls"
+                        Grid.Column="4" Orientation="Horizontal" Spacing="1" Margin="2,0,6,0">
                 <Button Classes="accent-text"
                         Click="OnMinimizeClick"
                         Padding="9,0" Height="32" CornerRadius="7"

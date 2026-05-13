@@ -31,6 +31,34 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // macOS 特定配置
+        if (OperatingSystem.IsMacOS())
+        {
+            // 设置标题栏高度以让红绿灯垂直居中
+            ExtendClientAreaTitleBarHeightHint = 38;
+
+            // 设置红绿灯留白宽度
+            if (MacTrafficLightSpacer is not null)
+                MacTrafficLightSpacer.Width = 64;
+
+            // 隐藏自定义窗口控制（使用原生红绿灯）
+            if (CustomWindowControls is not null)
+                CustomWindowControls.IsVisible = false;
+
+            // 右侧按钮组添加额外 padding 以视觉平衡
+            if (RightButtonGroup is not null)
+                RightButtonGroup.Margin = new Thickness(0, 0, 6, 0);
+
+            // 订阅窗口状态变化以处理全屏切换
+            this.PropertyChanged += OnWindowStateChanged;
+        }
+        else
+        {
+            // Windows/Linux：隐藏留白（宽度为 0）
+            if (MacTrafficLightSpacer is not null)
+                MacTrafficLightSpacer.Width = 0;
+        }
+
         Loaded += OnLoaded;
     }
 
@@ -212,6 +240,25 @@ public partial class MainWindow : Window
             ? WindowState.Normal
             : WindowState.Maximized;
         e.Handled = true;
+    }
+
+    private void OnWindowStateChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property.Name != nameof(WindowState)) return;
+        if (!OperatingSystem.IsMacOS()) return;
+
+        if (WindowState == WindowState.FullScreen)
+        {
+            // 进入全屏：隐藏留白（红绿灯会随菜单栏自动隐藏）
+            if (MacTrafficLightSpacer is not null)
+                MacTrafficLightSpacer.Width = 0;
+        }
+        else
+        {
+            // 退出全屏：恢复留白
+            if (MacTrafficLightSpacer is not null)
+                MacTrafficLightSpacer.Width = 76;
+        }
     }
 
     // ── Pointer handlers (rubber-band + internal drag-move) ──────────
