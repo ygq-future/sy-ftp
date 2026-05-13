@@ -16,19 +16,19 @@ jobs:
           - os: Windows
             runs-on: windows-latest
             rid: win-x64
-            artifact-path: ./bin/Release/net10.0/win-x64/publish/sy-ftp.exe
+            artifact-path: ./bin/Release/net10.0/win-x64/publish
           - os: macOS ARM64
             runs-on: macos-latest
             rid: osx-arm64
-            artifact-path: ./bin/Release/net10.0/osx-arm64/publish/sy-ftp
+            artifact-path: ./bin/Release/net10.0/osx-arm64/publish
           - os: macOS Intel
             runs-on: macos-13
             rid: osx-x64
-            artifact-path: ./bin/Release/net10.0/osx-x64/publish/sy-ftp
+            artifact-path: ./bin/Release/net10.0/osx-x64/publish
           - os: Linux
             runs-on: ubuntu-latest
             rid: linux-x64
-            artifact-path: ./bin/Release/net10.0/linux-x64/publish/sy-ftp
+            artifact-path: ./bin/Release/net10.0/linux-x64/publish
 
     steps:
       - name: Checkout code
@@ -44,7 +44,12 @@ jobs:
 
       - name: Build for ${{ matrix.rid }}
         shell: bash
-        run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained --no-restore
+        run: |
+          dotnet publish \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained \
+            --no-restore
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -96,7 +101,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p sy-ftp.app/Contents/{MacOS,Resources}
-          cp ./sy-ftp-universal sy-ftp.app/Contents/MacOS/sy-ftp
+          cp -R ./arm64-build/* sy-ftp.app/Contents/MacOS/
           chmod +x sy-ftp.app/Contents/MacOS/sy-ftp
           
           if [ -f "Assets/sy-ftp.icns" ]; then
@@ -182,7 +187,7 @@ jobs:
           SolidCompression=yes
 
           [Files]
-          Source: "win-build\sy-ftp.exe"; DestDir: "{app}"
+          Source: "win-build\*"; DestDir: "{app}"; Flags: recursesubdirs
 
           [Icons]
           Name: "{group}\SY-FTP"; Filename: "{app}\sy-ftp.exe"
