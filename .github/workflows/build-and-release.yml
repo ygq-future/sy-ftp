@@ -1,0 +1,213 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      matrix:
+        include:
+          - os: Windows
+            runs-on: windows-latest
+            rid: win-x64
+            artifact-name: sy-ftp.exe
+            artifact-path: ./bin/Release/net10.0/win-x64/publish/sy-ftp.exe
+          - os: macOS
+            runs-on: macos-latest
+            rid: osx-arm64
+            artifact-name: sy-ftp-arm64
+            artifact-path: ./bin/Release/net10.0/osx-arm64/publish/sy-ftp
+          - os: macOS Intel
+            runs-on: macos-13
+            rid: osx-x64
+            artifact-name: sy-ftp-x64
+            artifact-path: ./bin/Release/net10.0/osx-x64/publish/sy-ftp
+          - os: Linux
+            runs-on: ubuntu-latest
+            rid: linux-x64
+            artifact-name: sy-ftp
+            artifact-path: ./bin/Release/net10.0/linux-x64/publish/sy-ftp
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build for ${{ matrix.rid }}
+        run: |
+          dotnet publish -c Release -r ${{ matrix.rid }} \
+            --self-contained \
+            --no-restore
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sy-ftp-${{ matrix.rid }}
+          path: ${{ matrix.artifact-path }}
+          retention-days: 30
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ matrix.artifact-path }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-macos-app:
+    name: Create macOS App Bundle
+    runs-on: macos-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Download macOS ARM64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sy-ftp-osx-arm64
+          path: ./arm64-build
+
+      - name: Download macOS x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sy-ftp-osx-x64
+          path: ./x64-build
+
+      - name: Create universal binary
+        run: |
+          lipo -create ./arm64-build/sy-ftp ./x64-build/sy-ftp \
+            -output ./sy-ftp-universal
+          chmod +x ./sy-ftp-universal
+
+      - name: Create macOS App Bundle
+        run: |
+          mkdir -p sy-ftp.app/Contents/{MacOS,Resources}
+          cp ./sy-ftp-universal sy-ftp.app/Contents/MacOS/sy-ftp
+          chmod +x sy-ftp.app/Contents/MacOS/sy-ftp
+          
+          # Copy icon if available
+          if [ -f "Assets/sy-ftp.icns" ]; then
+            cp Assets/sy-ftp.icns sy-ftp.app/Contents/Resources/
+          fi
+          
+          # Create Info.plist
+          cat > sy-ftp.app/Contents/Info.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>sy-ftp</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.sy-ftp.app</string>
+            <key>CFBundleName</key>
+            <string>SY-FTP</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ github.ref_name }}</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>NSPrincipalClass</key>
+            <string>NSApplication</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Create DMG
+        run: |
+          hdiutil create -volname "SY-FTP" -srcfolder ./sy-ftp.app \
+            -ov -format UDZO sy-ftp.dmg
+
+      - name: Upload DMG to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: sy-ftp.dmg
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-windows-installer:
+    name: Create Windows Installer
+    runs-on: windows-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sy-ftp-win-x64
+          path: ./win-build
+
+      - name: Download Inno Setup
+        run: |
+          $innoSetupUrl = "https://jrsoftware.org/download.php/is.exe"
+          Invoke-WebRequest -Uri $innoSetupUrl -OutFile "is.exe"
+          Start-Process -FilePath "is.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES" -Wait
+
+      - name: Create Inno Setup Script
+        run: |
+          @'
+          [Setup]
+          AppName=SY-FTP
+          AppVersion=${{ github.ref_name }}
+          AppPublisher=ygq-future
+          AppURL=https://github.com/ygq-future/sy-ftp
+          DefaultDirName={pf}\SY-FTP
+          DefaultGroupName=SY-FTP
+          OutputDir=.
+          OutputBaseFilename=sy-ftp-installer
+          SetupIconFile=Assets\sy-ftp.ico
+          UninstallDisplayIcon={app}\sy-ftp.exe
+
+          [Files]
+          Source: "win-build\sy-ftp.exe"; DestDir: "{app}"
+
+          [Icons]
+          Name: "{group}\SY-FTP"; Filename: "{app}\sy-ftp.exe"
+          Name: "{group}\Uninstall SY-FTP"; Filename: "{uninstallexe}"
+          Name: "{commondesktop}\SY-FTP"; Filename: "{app}\sy-ftp.exe"
+
+          [Run]
+          Filename: "{app}\sy-ftp.exe"; Description: "Launch SY-FTP"; Flags: nowait postinstall skipifsilent
+          '@ | Out-File -Encoding UTF8 setup.iss
+
+      - name: Build Installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" setup.iss
+
+      - name: Upload Installer to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: sy-ftp-installer.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
