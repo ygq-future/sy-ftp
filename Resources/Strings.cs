@@ -17,6 +17,9 @@ public static class Strings
         ["toolbar.theme.tooltip"] = "Toggle light / dark theme",
         ["toolbar.topmost.tooltip"] = "Always on top",
         ["toolbar.settings.tooltip"] = "Settings",
+        ["toolbar.minimize.tooltip"] = "Minimize",
+        ["toolbar.maxrestore.tooltip"] = "Maximize / Restore",
+        ["toolbar.close.tooltip"] = "Close",
 
         // Sidebar
         ["sidebar.hosts"] = "Hosts",
@@ -43,6 +46,7 @@ public static class Strings
         ["file.synced"] = "Synced {0}",
         ["file.path.copy.tooltip"] = "Copy path",
         ["file.path.copied"] = "Path copied!",
+        ["file.path.edit.tooltip"] = "Edit path",
         ["file.path.edit.go.tooltip"] = "Go (Enter)",
         ["file.path.edit.cancel.tooltip"] = "Cancel (Esc)",
         ["file.tip.connected"] = "Connected",
@@ -174,6 +178,9 @@ public static class Strings
         ["toolbar.theme.tooltip"] = "切换浅色 / 深色主题",
         ["toolbar.topmost.tooltip"] = "窗口置顶",
         ["toolbar.settings.tooltip"] = "设置",
+        ["toolbar.minimize.tooltip"] = "最小化",
+        ["toolbar.maxrestore.tooltip"] = "最大化 / 还原",
+        ["toolbar.close.tooltip"] = "关闭",
 
         // Sidebar
         ["sidebar.hosts"] = "主机",
@@ -200,6 +207,7 @@ public static class Strings
         ["file.synced"] = "已同步 {0}",
         ["file.path.copy.tooltip"] = "复制路径",
         ["file.path.copied"] = "路径已复制",
+        ["file.path.edit.tooltip"] = "编辑路径",
         ["file.path.edit.go.tooltip"] = "前往 (Enter)",
         ["file.path.edit.cancel.tooltip"] = "取消 (Esc)",
         ["file.tip.connected"] = "已连接",

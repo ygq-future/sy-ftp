@@ -19,7 +19,10 @@
         Width="900" Height="560"
         MinWidth="680" MinHeight="440"
         Background="{DynamicResource SemiColorBackground0}"
-        FontSize="13">
+        FontSize="13"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="-1">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -39,10 +42,13 @@
 
     <Window.Styles>
 
-        <!-- ── Global ToolTip delay: prevents strobing when moving between buttons ── -->
+        <!-- ── Global ToolTip delay: negative BetweenShowDelay disables the
+             "immediate open on adjacent control" behavior. Every tooltip must
+             wait the full ShowDelay, so fast sweeps across a button row stay
+             silent instead of strobing. ── -->
         <Style Selector=":is(Control)">
             <Setter Property="ToolTip.ShowDelay" Value="550" />
-            <Setter Property="ToolTip.BetweenShowDelay" Value="0" />
+            <Setter Property="ToolTip.BetweenShowDelay" Value="-1" />
         </Style>
 
         <!-- ── Icon-only ToggleButton: suppress all checked/hover background ── -->
@@ -161,7 +167,9 @@
         </Style>
 
         <!-- ── Window control buttons (min/max/close) ── -->
-        <!-- Removed: using OS-native caption buttons for DWM animations. -->
+        <!-- v12 custom caption buttons reuse the accent-text style to match
+             the theme/pin/settings buttons on their left — no red close,
+             no fixed 44-px slabs. -->
 
         <!-- ── Host ListBoxItem: transparent in every state, selection shown on card ── -->
         <Style Selector="ListBox.host-list ListBoxItem">
@@ -460,7 +468,9 @@
              ══════════════════════════════════════════ -->
         <Grid Grid.Row="0"
               Background="{DynamicResource SemiColorBackground1}"
-              ColumnDefinitions="Auto,Auto,*,Auto">
+              ColumnDefinitions="Auto,Auto,*,Auto,Auto"
+              PointerPressed="OnTitleBarPointerPressed"
+              DoubleTapped="OnTitleBarDoubleTapped">
 
             <!-- Left: Connect / Disconnect -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0">
@@ -584,7 +594,42 @@
 
             </StackPanel>
 
-            <!-- Column 4: empty reserve for OS-native caption buttons (min/max/close) -->
+            <!-- Column 4: custom min / max / close buttons.
+                 WindowDecorations="Full" keeps WS_CAPTION for DWM animations,
+                 but Avalonia no longer draws native buttons, so we supply our own. -->
+            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="1" Margin="2,0,6,0">
+                <Button Classes="accent-text"
+                        Click="OnMinimizeClick"
+                        Padding="9,0" Height="32" CornerRadius="7"
+                        ToolTip.Tip="{l:Tr toolbar.minimize.tooltip}">
+                    <PathIcon Data="{pia:IconGeometry Icon=minus, IconType=regular}"
+                              Width="16" Height="16"
+                              Foreground="{DynamicResource SemiColorText1}" />
+                </Button>
+                <Button Classes="accent-text"
+                        Click="OnMaxRestoreClick"
+                        Padding="9,0" Height="32" CornerRadius="7"
+                        ToolTip.Tip="{l:Tr toolbar.maxrestore.tooltip}">
+                    <Panel>
+                        <PathIcon Data="{pia:IconGeometry Icon=square, IconType=regular}"
+                                  Width="14" Height="14"
+                                  Foreground="{DynamicResource SemiColorText1}"
+                                  IsVisible="{Binding $parent[Window].WindowState, Converter={x:Static conv:WindowStateToBoolConverter.IsNormal}}" />
+                        <PathIcon Data="{pia:IconGeometry Icon=squares_four, IconType=regular}"
+                                  Width="14" Height="14"
+                                  Foreground="{DynamicResource SemiColorText1}"
+                                  IsVisible="{Binding $parent[Window].WindowState, Converter={x:Static conv:WindowStateToBoolConverter.IsMaximized}}" />
+                    </Panel>
+                </Button>
+                <Button Classes="accent-text"
+                        Click="OnCloseClick"
+                        Padding="9,0" Height="32" CornerRadius="7"
+                        ToolTip.Tip="{l:Tr toolbar.close.tooltip}">
+                    <PathIcon Data="{pia:IconGeometry Icon=x, IconType=regular}"
+                              Width="16" Height="16"
+                              Foreground="{DynamicResource SemiColorText1}" />
+                </Button>
+            </StackPanel>
 
         </Grid>
 
@@ -878,14 +923,15 @@
                                     <!-- Buttons always visible on right -->
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" Margin="8,0,0,0">
                                         <Button Classes="accent-text" Padding="4,2"
-                                                Click="OnEditPathClick">
+                                                Click="OnEditPathClick"
+                                                ToolTip.Tip="{l:Tr file.path.edit.tooltip}">
                                             <PathIcon Data="{pia:IconGeometry Icon=pencil_simple, IconType=regular}"
                                                       Width="13" Height="13"
                                                       Foreground="{DynamicResource SemiColorText3}" />
                                         </Button>
-                        <Button Classes="accent-text" Padding="4,2"
-                                Click="OnCopyPathClick"
-                                ToolTip.Tip="{l:Tr file.path.copy.tooltip}">
+                                        <Button Classes="accent-text" Padding="4,2"
+                                                Click="OnCopyPathClick"
+                                                ToolTip.Tip="{l:Tr file.path.copy.tooltip}">
                                             <PathIcon Data="{pia:IconGeometry Icon=copy, IconType=regular}"
                                                       Width="13" Height="13"
                                                       Foreground="{DynamicResource SemiColorText3}" />
