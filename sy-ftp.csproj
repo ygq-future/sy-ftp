@@ -7,19 +7,8 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <ApplicationIcon>Assets\sy-ftp.ico</ApplicationIcon>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-
-        <!-- 单文件 -->
-        <PublishSingleFile>true</PublishSingleFile>
-
-        <!-- 自包含 -->
-        <SelfContained>true</SelfContained>
-
         <!-- 裁剪 -->
         <PublishTrimmed>false</PublishTrimmed>
-
-        <!-- ReadyToRun 提升启动速度 -->
-        <PublishReadyToRun>true</PublishReadyToRun>
-
         <!-- 关闭调试符号 -->
         <DebugType>none</DebugType>
         <DebugSymbols>false</DebugSymbols>
