@@ -18,7 +18,7 @@ jobs:
             rid: win-x64
             artifact-name: sy-ftp.exe
             artifact-path: ./bin/Release/net10.0/win-x64/publish/sy-ftp.exe
-          - os: macOS
+          - os: macOS ARM64
             runs-on: macos-latest
             rid: osx-arm64
             artifact-name: sy-ftp-arm64
@@ -46,11 +46,13 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Build for ${{ matrix.rid }}
-        run: |
-          dotnet publish -c Release -r ${{ matrix.rid }} \
-            --self-contained \
-            --no-restore
+      - name: Build for ${{ matrix.rid }} (Windows)
+        if: matrix.os == 'Windows'
+        run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained --no-restore
+
+      - name: Build for ${{ matrix.rid }} (Unix)
+        if: matrix.os != 'Windows'
+        run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained --no-restore
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -79,11 +81,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
       - name: Download macOS ARM64 artifact
         uses: actions/download-artifact@v4
         with:
@@ -107,13 +104,9 @@ jobs:
           mkdir -p sy-ftp.app/Contents/{MacOS,Resources}
           cp ./sy-ftp-universal sy-ftp.app/Contents/MacOS/sy-ftp
           chmod +x sy-ftp.app/Contents/MacOS/sy-ftp
-          
-          # Copy icon if available
           if [ -f "Assets/sy-ftp.icns" ]; then
             cp Assets/sy-ftp.icns sy-ftp.app/Contents/Resources/
           fi
-          
-          # Create Info.plist
           cat > sy-ftp.app/Contents/Info.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -166,15 +159,16 @@ jobs:
           name: sy-ftp-win-x64
           path: ./win-build
 
-      - name: Download Inno Setup
+      - name: Download and Install Inno Setup
         run: |
           $innoSetupUrl = "https://jrsoftware.org/download.php/is.exe"
-          Invoke-WebRequest -Uri $innoSetupUrl -OutFile "is.exe"
-          Start-Process -FilePath "is.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES" -Wait
+          $innoSetupPath = "C:\is.exe"
+          Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupPath
+          & $innoSetupPath /VERYSILENT /SUPPRESSMSGBOXES
 
       - name: Create Inno Setup Script
         run: |
-          @'
+          $setupScript = @'
           [Setup]
           AppName=SY-FTP
           AppVersion=${{ github.ref_name }}
@@ -186,6 +180,8 @@ jobs:
           OutputBaseFilename=sy-ftp-installer
           SetupIconFile=Assets\sy-ftp.ico
           UninstallDisplayIcon={app}\sy-ftp.exe
+          Compression=lzma2
+          SolidCompression=yes
 
           [Files]
           Source: "win-build\sy-ftp.exe"; DestDir: "{app}"
@@ -199,9 +195,8 @@ jobs:
           Filename: "{app}\sy-ftp.exe"; Description: "Launch SY-FTP"; Flags: nowait postinstall skipifsilent
           '@ | Out-File -Encoding UTF8 setup.iss
 
-      - name: Build Installer
-        run: |
-          & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" setup.iss
+      - name: Build Installer with Inno Setup
+        run: & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" setup.iss
 
       - name: Upload Installer to Release
         uses: softprops/action-gh-release@v1
