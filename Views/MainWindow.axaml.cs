@@ -183,6 +183,37 @@ public partial class MainWindow : Window
         }
     }
 
+    // ── Caption buttons (custom min/max/close for extended client area) ──
+
+    private void OnMinimizeClick(object? sender, RoutedEventArgs e)
+        => WindowState = WindowState.Minimized;
+
+    private void OnMaxRestoreClick(object? sender, RoutedEventArgs e)
+        => WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+
+    private void OnCloseClick(object? sender, RoutedEventArgs e) => Close();
+
+    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        // Don't start a drag when the press originated on an interactive control.
+        // ToggleButton extends Button, so a single check covers both.
+        if (e.Source is Visual v && v.FindAncestorOfType<Button>(includeSelf: true) is not null) return;
+        BeginMoveDrag(e);
+    }
+
+    private void OnTitleBarDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        // Ignore double-taps on buttons — they have their own click handlers.
+        if (e.Source is Visual v && v.FindAncestorOfType<Button>(includeSelf: true) is not null) return;
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+        e.Handled = true;
+    }
+
     // ── Pointer handlers (rubber-band + internal drag-move) ──────────
 
     private void OnFileListPointerPressed(object? sender, PointerPressedEventArgs e)

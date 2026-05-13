@@ -145,9 +145,51 @@
             <Setter Property="Foreground" Value="White" />
         </Style>
 
-        <!-- RadioButton accent (circle uses SemiColorPrimary) -->
-        <Style Selector="RadioButton.theme-radio">
+        <!-- ── Theme segmented control: pill-style toggle with accent fill ── -->
+        <Style Selector="Button.theme-seg">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Padding" Value="16,7" />
+            <Setter Property="MinWidth" Value="96" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.theme-seg:pointerover">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.theme-seg:pressed">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.theme-seg /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1Start}" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.2" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.theme-seg:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <Style Selector="Button.theme-seg.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimary}" />
+        </Style>
+        <Style Selector="Button.theme-seg.active:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryPointerover}" />
+        </Style>
+        <!-- Content coloring: white when active, muted otherwise -->
+        <Style Selector="Button.theme-seg TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource SemiColorText1}" />
+        </Style>
+        <Style Selector="Button.theme-seg PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText2}" />
+        </Style>
+        <Style Selector="Button.theme-seg.active TextBlock">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.theme-seg.active PathIcon">
+            <Setter Property="Foreground" Value="White" />
         </Style>
     </Window.Styles>
 
@@ -285,16 +327,39 @@
                             <StackPanel Spacing="6">
                                 <TextBlock Text="{l:Tr settings.theme}" FontSize="12"
                                            Foreground="{DynamicResource SemiColorText2}" />
-                                <StackPanel Orientation="Horizontal" Spacing="16">
-                                    <RadioButton Classes="theme-radio"
-                                                 GroupName="ThemeMode"
-                                                 Content="{l:Tr settings.theme.light}"
-                                                 IsChecked="{Binding IsLightMode, Mode=TwoWay}" />
-                                    <RadioButton Classes="theme-radio"
-                                                 GroupName="ThemeMode"
-                                                 Content="{l:Tr settings.theme.dark}"
-                                                 IsChecked="{Binding IsDarkMode, Mode=TwoWay}" />
-                                </StackPanel>
+                                <!-- Segmented toggle: pill container with two buttons.
+                                     Selected side fills with accent color, the other stays muted. -->
+                                <Border Background="{DynamicResource SemiColorFill0}"
+                                        BorderBrush="{DynamicResource SemiColorBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="9"
+                                        Padding="3"
+                                        HorizontalAlignment="Left">
+                                    <StackPanel Orientation="Horizontal" Spacing="2">
+                                        <Button Classes="theme-seg"
+                                                Classes.active="{Binding IsLightMode}"
+                                                Click="OnThemeLightClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <PathIcon Data="{pia:IconGeometry Icon=sun, IconType=fill}"
+                                                          Width="14" Height="14" />
+                                                <TextBlock Text="{l:Tr settings.theme.light}"
+                                                           FontSize="12" FontWeight="Medium"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="theme-seg"
+                                                Classes.active="{Binding IsDarkMode}"
+                                                Click="OnThemeDarkClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <PathIcon Data="{pia:IconGeometry Icon=moon, IconType=fill}"
+                                                          Width="14" Height="14" />
+                                                <TextBlock Text="{l:Tr settings.theme.dark}"
+                                                           FontSize="12" FontWeight="Medium"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
 
                             <StackPanel Spacing="8">

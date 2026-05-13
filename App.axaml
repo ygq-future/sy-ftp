@@ -11,6 +11,23 @@
 
     <Application.Resources>
         <ResourceDictionary>
+            <!-- Suppress Avalonia's built-in drawn decorations so our custom
+                 toolbar fully owns the title bar region. WS_CAPTION is kept
+                 (via WindowDecorations="Full") so DWM animations still play. -->
+            <ControlTheme x:Key="{x:Type WindowDrawnDecorations}" TargetType="WindowDrawnDecorations">
+                <Setter Property="Template">
+                    <WindowDrawnDecorationsTemplate>
+                        <WindowDrawnDecorationsContent>
+                            <WindowDrawnDecorationsContent.Overlay>
+                                <DockPanel Height="{TemplateBinding TitleBarHeight}"
+                                           VerticalAlignment="Top"
+                                           Margin="{TemplateBinding ShadowThickness}" />
+                            </WindowDrawnDecorationsContent.Overlay>
+                        </WindowDrawnDecorationsContent>
+                    </WindowDrawnDecorationsTemplate>
+                </Setter>
+            </ControlTheme>
+
             <ResourceDictionary.ThemeDictionaries>
                 <!-- Pure-black dark theme — unified surfaces, layered elements -->
                 <ResourceDictionary x:Key="Dark">

@@ -47,4 +47,14 @@ public partial class SettingsWindow : Window
     {
         if (DataContext is SettingsViewModel vm) vm.SelectedSectionIndex = 2;
     }
+
+    private void OnThemeLightClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel vm) vm.IsDarkMode = false;
+    }
+
+    private void OnThemeDarkClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel vm) vm.IsDarkMode = true;
+    }
 }
