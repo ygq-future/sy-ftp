@@ -40,7 +40,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore -r ${{ matrix.rid }}
 
       - name: Build for ${{ matrix.rid }}
         shell: bash
@@ -160,8 +160,7 @@ jobs:
           $innoSetupUrl = "https://jrsoftware.org/download.php/is.exe"
           $innoSetupPath = "C:\is.exe"
           Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupPath
-          & $innoSetupPath /VERYSILENT /SUPPRESSMSGBOXES
-          Start-Sleep -Seconds 30
+          Start-Process -FilePath $innoSetupPath -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -NoNewWindow
 
       - name: Create Inno Setup Script
         shell: powershell
@@ -196,7 +195,7 @@ jobs:
 
       - name: Build Installer with Inno Setup
         shell: cmd
-        run: "C:\Program Files (x86)\Inno Setup 6\iscc.exe" setup.iss
+        run: '"C:\Program Files (x86)\Inno Setup 6\iscc.exe" setup.iss'
 
       - name: Upload Installer to Release
         uses: softprops/action-gh-release@v1
