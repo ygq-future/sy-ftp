@@ -13,7 +13,11 @@ public partial class InputDialog : Window
         InitializeComponent();
         ApplyShadow();
         ActualThemeVariantChanged += (_, _) => ApplyShadow();
-        Opened += (_, _) => InputBox.Focus();
+        Opened += (_, _) =>
+        {
+            InputBox.Focus();
+            InputBox.CaretIndex = InputBox.Text?.Length ?? 0;
+        };
         InputBox.TextChanged += (_, _) =>
         {
             if (!string.IsNullOrWhiteSpace(InputBox.Text))

@@ -548,6 +548,15 @@ public partial class MainWindow : Window
         vm.FileBrowser.DeleteSelectedCommand.Execute(null);
     }
 
+    private void OnItemRenameClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+        SyncSelectedFilesToViewModel();
+        var file = vm.FileBrowser.SelectedFile;
+        if (file is null || file.IsParentEntry) return;
+        vm.FileBrowser.RenameCommand.Execute(file);
+    }
+
     private async void OnItemTransferToClick(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel vm) return;

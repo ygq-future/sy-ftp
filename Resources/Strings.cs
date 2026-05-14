@@ -60,6 +60,7 @@ public static class Strings
         ["file.menu.remote_edit"] = "Remote Edit",
         ["file.menu.online_edit"] = "Online Edit",
         ["file.menu.transfer_to"] = "Transfer to…",
+        ["file.menu.rename"] = "Rename",
         ["file.menu.delete"] = "Delete",
 
         // Status bar
@@ -104,6 +105,8 @@ public static class Strings
         ["input.new_folder.label"] = "Folder name",
         ["input.new_file.title"] = "New File",
         ["input.new_file.label"] = "File name",
+        ["input.rename.title"] = "Rename",
+        ["input.rename.label"] = "New name",
         ["input.btn.cancel"] = "Cancel",
         ["input.btn.ok"] = "OK",
         ["input.error.required"] = "Name cannot be empty",
@@ -221,6 +224,7 @@ public static class Strings
         ["file.menu.remote_edit"] = "远程编辑",
         ["file.menu.online_edit"] = "在线编辑",
         ["file.menu.transfer_to"] = "传输到…",
+        ["file.menu.rename"] = "重命名",
         ["file.menu.delete"] = "删除",
 
         // Status bar
@@ -265,6 +269,8 @@ public static class Strings
         ["input.new_folder.label"] = "文件夹名",
         ["input.new_file.title"] = "新建文件",
         ["input.new_file.label"] = "文件名",
+        ["input.rename.title"] = "重命名",
+        ["input.rename.label"] = "新名称",
         ["input.btn.cancel"] = "取消",
         ["input.btn.ok"] = "确定",
         ["input.error.required"] = "名称不能为空",
