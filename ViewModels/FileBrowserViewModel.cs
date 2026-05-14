@@ -656,6 +656,46 @@ public partial class FileBrowserViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task RenameAsync(RemoteFile? file, CancellationToken ct)
+    {
+        if (file is null || file.IsParentEntry) return;
+
+        try
+        {
+            var lifetime = Avalonia.Application.Current?.ApplicationLifetime
+                as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+            var mainWindow = lifetime?.MainWindow;
+            if (mainWindow is null) return;
+
+            var loc = Services.LocalizationService.Instance;
+            var dlg = new Views.InputDialog
+            {
+                Header = loc.Tr("input.rename.title"),
+                Label = loc.Tr("input.rename.label"),
+                Input = file.Name,
+            };
+            var result = await dlg.ShowDialog<bool?>(mainWindow);
+            if (result != true) return;
+
+            var newName = dlg.Input?.Trim();
+            if (string.IsNullOrWhiteSpace(newName) || newName == file.Name) return;
+
+            // Build the destination path in the same directory as the source
+            var srcPath = file.FullPath;
+            var lastSlash = srcPath.LastIndexOf('/');
+            var parentPath = lastSlash <= 0 ? "" : srcPath[..lastSlash];
+            var destPath = $"{parentPath}/{newName}";
+
+            await _ftp.MoveAsync(srcPath, destPath, ct);
+            await RefreshAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    [RelayCommand]
     private async Task EditRemoteAsync(RemoteFile? file, CancellationToken ct)
     {
         if (file is not { IsDirectory: false }) return;

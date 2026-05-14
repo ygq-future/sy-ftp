@@ -123,14 +123,17 @@
             <Rectangle Grid.Row="0" Height="1" VerticalAlignment="Bottom"
                        Fill="{DynamicResource SemiColorBorder}" />
 
-            <!-- Editor -->
+            <!-- Editor: WordWrap is purely visual; no line breaks are inserted into the document.
+                 Disables horizontal autoscroll on long-line selection, which was triggering AvaloniaEdit hangs.
+                 Right padding keeps the wrapped text from sliding under the vertical scrollbar. -->
             <ae:TextEditor x:Name="Editor"
                            Grid.Row="1"
                            FontFamily="Consolas,Menlo,Courier New,monospace"
                            FontSize="13"
                            ShowLineNumbers="True"
-                           WordWrap="False"
-                           HorizontalScrollBarVisibility="Auto"
+                           WordWrap="True"
+                           Padding="4,8,16,8"
+                           HorizontalScrollBarVisibility="Disabled"
                            VerticalScrollBarVisibility="Auto" />
 
             <!-- Footer -->

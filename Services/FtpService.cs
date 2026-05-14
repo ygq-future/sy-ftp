@@ -2,6 +2,7 @@ using FluentFTP;
 using static FluentFTP.Helpers.Enums;
 using sy_ftp.Models;
 using Renci.SshNet;
+using Renci.SshNet.Common;
 using SftpClient = Renci.SshNet.SftpClient;
 
 namespace sy_ftp.Services;
@@ -11,6 +12,7 @@ public class FtpService : IFtpService, IDisposable
     private AsyncFtpClient? _ftpClient;
     private SftpClient? _sftpClient;
     private bool _isSftp;
+    private FtpHost? _host;
 
     public bool IsConnected => _isSftp
         ? _sftpClient?.IsConnected ?? false
@@ -20,17 +22,20 @@ public class FtpService : IFtpService, IDisposable
     {
         await DisconnectAsync(ct);
 
+        _host = host;
         _isSftp = host.Port == 22;
 
         if (_isSftp)
         {
             _sftpClient = new SftpClient(host.Host, host.Port, host.Username, host.Password);
+            _sftpClient.KeepAliveInterval = TimeSpan.FromSeconds(30);
             await _sftpClient.ConnectAsync(ct);
         }
         else
         {
             _ftpClient = new AsyncFtpClient(host.Host, host.Username, host.Password, host.Port);
             _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Auto;
+            _ftpClient.Config.SocketKeepAlive = true;
             await _ftpClient.AutoConnect(ct);
         }
     }
@@ -39,247 +44,269 @@ public class FtpService : IFtpService, IDisposable
     {
         if (_sftpClient is not null)
         {
-            if (_sftpClient.IsConnected)
-                _sftpClient.Disconnect();
-            _sftpClient.Dispose();
+            try { if (_sftpClient.IsConnected) _sftpClient.Disconnect(); } catch { }
+            try { _sftpClient.Dispose(); } catch { }
             _sftpClient = null;
         }
 
         if (_ftpClient is not null)
         {
-            if (_ftpClient.IsConnected)
-                await _ftpClient.Disconnect(ct);
-            _ftpClient.Dispose();
+            try { if (_ftpClient.IsConnected) await _ftpClient.Disconnect(ct); } catch { }
+            try { _ftpClient.Dispose(); } catch { }
             _ftpClient = null;
         }
 
         _isSftp = false;
     }
 
-    public async Task<IReadOnlyList<RemoteFile>> ListDirectoryAsync(string path = "/", CancellationToken ct = default)
+    private async Task EnsureConnectedAsync(CancellationToken ct)
     {
-        if (_isSftp)
-        {
-            EnsureSftpConnected();
-            var items = await Task.Run(() => _sftpClient!.ListDirectory(path), ct);
-            return items
-                .Where(i => i.Name is not "." and not "..")
-                .Select(i => new RemoteFile(
-                    i.Name,
-                    i.FullName,
-                    i.Length,
-                    i.IsDirectory,
-                    i.LastWriteTime))
-                .ToArray();
-        }
-        else
-        {
-            EnsureFtpConnected();
-            var items = await _ftpClient!.GetListing(path, ct);
-            return items
-                .Where(i => i.Name is not "." and not "..")
-                .Select(i => new RemoteFile(
-                    i.Name,
-                    i.FullName,
-                    i.Size,
-                    i.Type == FtpObjectType.Directory,
-                    i.RawModified))
-                .ToArray();
-        }
+        if (IsConnected) return;
+        if (_host is null) throw new InvalidOperationException("Not connected to a server.");
+        await ConnectAsync(_host, ct);
     }
 
-    public async Task DownloadFileAsync(string remotePath, string localPath, IProgress<double>? progress = null, CancellationToken ct = default)
+    private async Task ReconnectAsync(CancellationToken ct)
     {
-        if (_isSftp)
+        if (_host is null) throw new InvalidOperationException("Not connected to a server.");
+        try { await DisconnectAsync(ct); } catch { }
+        await ConnectAsync(_host, ct);
+    }
+
+    private static bool IsConnectionError(Exception ex)
+    {
+        for (var e = (Exception?)ex; e is not null; e = e.InnerException)
         {
-            EnsureSftpConnected();
-            var total = _sftpClient!.GetAttributes(remotePath).Size;
-            await using var fs = File.Create(localPath);
-            await Task.Run(() =>
+            switch (e)
             {
-                _sftpClient!.DownloadFile(remotePath, fs, progress is not null
-                    ? downloaded => progress.Report(total > 0 ? (double)downloaded / total * 100 : 0)
-                    : null);
-            }, ct);
+                case System.IO.IOException:
+                case System.Net.Sockets.SocketException:
+                case ObjectDisposedException:
+                case TimeoutException:
+                case SshConnectionException:
+                case SshOperationTimeoutException:
+                    return true;
+            }
         }
-        else
+        return false;
+    }
+
+    private async Task<T> RunAsync<T>(Func<Task<T>> op, CancellationToken ct)
+    {
+        await EnsureConnectedAsync(ct);
+        try
         {
-            EnsureFtpConnected();
-            var p = progress is not null
-                ? new Progress<FtpProgress>(fp => progress.Report(fp.Progress))
-                : null;
-            var status = await _ftpClient!.DownloadFile(localPath, remotePath, FtpLocalExists.Overwrite, token: ct, progress: p);
-            if (!status.IsSuccess())
-                throw new InvalidOperationException($"Download failed: {remotePath}");
+            return await op();
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) when (IsConnectionError(ex) || !IsConnected)
+        {
+            await ReconnectAsync(ct);
+            return await op();
         }
     }
 
-    public async Task UploadFileAsync(string localPath, string remotePath, IProgress<double>? progress = null, CancellationToken ct = default)
+    private async Task RunAsync(Func<Task> op, CancellationToken ct)
     {
-        if (_isSftp)
+        await EnsureConnectedAsync(ct);
+        try
         {
-            EnsureSftpConnected();
-            await using var fs = File.OpenRead(localPath);
-            await Task.Run(() =>
+            await op();
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) when (IsConnectionError(ex) || !IsConnected)
+        {
+            await ReconnectAsync(ct);
+            await op();
+        }
+    }
+
+    public Task<IReadOnlyList<RemoteFile>> ListDirectoryAsync(string path = "/", CancellationToken ct = default)
+        => RunAsync<IReadOnlyList<RemoteFile>>(async () =>
+        {
+            if (_isSftp)
             {
-                _sftpClient!.UploadFile(fs, remotePath, true, progress is not null
-                    ? uploaded => progress.Report(0)
-                    : null);
-            }, ct);
-        }
-        else
-        {
-            EnsureFtpConnected();
-            var p = progress is not null
-                ? new Progress<FtpProgress>(fp => progress.Report(fp.Progress))
-                : null;
-            var status = await _ftpClient!.UploadFile(localPath, remotePath, FtpRemoteExists.Overwrite, token: ct, progress: p);
-            if (!status.IsSuccess())
-                throw new InvalidOperationException($"Upload failed: {localPath}");
-        }
-    }
+                var items = await Task.Run(() => _sftpClient!.ListDirectory(path), ct);
+                return items
+                    .Where(i => i.Name is not "." and not "..")
+                    .Select(i => new RemoteFile(
+                        i.Name,
+                        i.FullName,
+                        i.Length,
+                        i.IsDirectory,
+                        i.LastWriteTime))
+                    .ToArray();
+            }
+            else
+            {
+                var items = await _ftpClient!.GetListing(path, ct);
+                return items
+                    .Where(i => i.Name is not "." and not "..")
+                    .Select(i => new RemoteFile(
+                        i.Name,
+                        i.FullName,
+                        i.Size,
+                        i.Type == FtpObjectType.Directory,
+                        i.RawModified))
+                    .ToArray();
+            }
+        }, ct);
 
-    public async Task DeleteFileAsync(string remotePath, CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task DownloadFileAsync(string remotePath, string localPath, IProgress<double>? progress = null, CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            await Task.Run(() => _sftpClient!.DeleteFile(remotePath), ct);
-        }
-        else
-        {
-            EnsureFtpConnected();
-            await _ftpClient!.DeleteFile(remotePath, ct);
-        }
-    }
+            if (_isSftp)
+            {
+                var total = _sftpClient!.GetAttributes(remotePath).Size;
+                await using var fs = File.Create(localPath);
+                await Task.Run(() =>
+                {
+                    _sftpClient!.DownloadFile(remotePath, fs, progress is not null
+                        ? downloaded => progress.Report(total > 0 ? (double)downloaded / total * 100 : 0)
+                        : null);
+                }, ct);
+            }
+            else
+            {
+                var p = progress is not null
+                    ? new Progress<FtpProgress>(fp => progress.Report(fp.Progress))
+                    : null;
+                var status = await _ftpClient!.DownloadFile(localPath, remotePath, FtpLocalExists.Overwrite, token: ct, progress: p);
+                if (!status.IsSuccess())
+                    throw new InvalidOperationException($"Download failed: {remotePath}");
+            }
+        }, ct);
 
-    public async Task DeleteDirectoryAsync(string remotePath, CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task UploadFileAsync(string localPath, string remotePath, IProgress<double>? progress = null, CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            await Task.Run(() => SftpRecursiveDelete(remotePath), ct);
-        }
-        else
+            if (_isSftp)
+            {
+                await using var fs = File.OpenRead(localPath);
+                await Task.Run(() =>
+                {
+                    _sftpClient!.UploadFile(fs, remotePath, true, progress is not null
+                        ? uploaded => progress.Report(0)
+                        : null);
+                }, ct);
+            }
+            else
+            {
+                var p = progress is not null
+                    ? new Progress<FtpProgress>(fp => progress.Report(fp.Progress))
+                    : null;
+                var status = await _ftpClient!.UploadFile(localPath, remotePath, FtpRemoteExists.Overwrite, token: ct, progress: p);
+                if (!status.IsSuccess())
+                    throw new InvalidOperationException($"Upload failed: {localPath}");
+            }
+        }, ct);
+
+    public Task DeleteFileAsync(string remotePath, CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureFtpConnected();
-            await _ftpClient!.DeleteDirectory(remotePath, FtpListOption.Recursive, ct);
-        }
-    }
+            if (_isSftp)
+                await Task.Run(() => _sftpClient!.DeleteFile(remotePath), ct);
+            else
+                await _ftpClient!.DeleteFile(remotePath, ct);
+        }, ct);
+
+    public Task DeleteDirectoryAsync(string remotePath, CancellationToken ct = default)
+        => RunAsync(async () =>
+        {
+            if (_isSftp)
+                await Task.Run(() => SftpRecursiveDelete(remotePath), ct);
+            else
+                await _ftpClient!.DeleteDirectory(remotePath, FtpListOption.Recursive, ct);
+        }, ct);
 
     public async Task CreateDirectoryAsync(string remotePath, CancellationToken ct = default)
     {
         if (await DirectoryExistsAsync(remotePath, ct)) return;
-        if (_isSftp)
+        await RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            await Task.Run(() => _sftpClient!.CreateDirectory(remotePath), ct);
-        }
-        else
-        {
-            EnsureFtpConnected();
-            await _ftpClient!.CreateDirectory(remotePath, ct);
-        }
+            if (_isSftp)
+                await Task.Run(() => _sftpClient!.CreateDirectory(remotePath), ct);
+            else
+                await _ftpClient!.CreateDirectory(remotePath, ct);
+        }, ct);
     }
 
-    public async Task<bool> DirectoryExistsAsync(string remotePath, CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task<bool> DirectoryExistsAsync(string remotePath, CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            return await Task.Run(() =>
+            if (_isSftp)
             {
-                try { return _sftpClient!.Exists(remotePath); }
-                catch { return false; }
-            }, ct);
-        }
-        else
-        {
-            EnsureFtpConnected();
-            return await _ftpClient!.DirectoryExists(remotePath, ct);
-        }
-    }
+                return await Task.Run(() =>
+                {
+                    try { return _sftpClient!.Exists(remotePath); }
+                    catch (SshException) { return false; }
+                }, ct);
+            }
+            else
+            {
+                return await _ftpClient!.DirectoryExists(remotePath, ct);
+            }
+        }, ct);
 
-    public async Task<string> GetWorkingDirectoryAsync(CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task<string> GetWorkingDirectoryAsync(CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            return await Task.Run(() => _sftpClient!.WorkingDirectory, ct);
-        }
-        else
-        {
-            EnsureFtpConnected();
-            return await _ftpClient!.GetWorkingDirectory(ct);
-        }
-    }
+            if (_isSftp)
+                return await Task.Run(() => _sftpClient!.WorkingDirectory, ct);
+            else
+                return await _ftpClient!.GetWorkingDirectory(ct);
+        }, ct);
 
-    public async Task ChangeDirectoryAsync(string remotePath, CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task ChangeDirectoryAsync(string remotePath, CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            await Task.Run(() => _sftpClient!.ChangeDirectory(remotePath), ct);
-        }
-        else
-        {
-            EnsureFtpConnected();
-            await _ftpClient!.SetWorkingDirectory(remotePath, ct);
-        }
-    }
+            if (_isSftp)
+                await Task.Run(() => _sftpClient!.ChangeDirectory(remotePath), ct);
+            else
+                await _ftpClient!.SetWorkingDirectory(remotePath, ct);
+        }, ct);
 
-    public async Task<bool> FileExistsAsync(string remotePath, CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task<bool> FileExistsAsync(string remotePath, CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            return await Task.Run(() => _sftpClient!.Exists(remotePath), ct);
-        }
-        else
-        {
-            EnsureFtpConnected();
-            return await _ftpClient!.FileExists(remotePath, ct);
-        }
-    }
+            if (_isSftp)
+                return await Task.Run(() => _sftpClient!.Exists(remotePath), ct);
+            else
+                return await _ftpClient!.FileExists(remotePath, ct);
+        }, ct);
 
-    public async Task<long> GetFileSizeAsync(string remotePath, CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task<long> GetFileSizeAsync(string remotePath, CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            return (await Task.Run(() => _sftpClient!.GetAttributes(remotePath), ct)).Size;
-        }
-        else
-        {
-            EnsureFtpConnected();
-            return await _ftpClient!.GetFileSize(remotePath);
-        }
-    }
+            if (_isSftp)
+                return (await Task.Run(() => _sftpClient!.GetAttributes(remotePath), ct)).Size;
+            else
+                return await _ftpClient!.GetFileSize(remotePath);
+        }, ct);
 
-    public async Task<IReadOnlyList<RemoteFile>> ListDirectoryRecursiveAsync(string path, CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task<IReadOnlyList<RemoteFile>> ListDirectoryRecursiveAsync(string path, CancellationToken ct = default)
+        => RunAsync<IReadOnlyList<RemoteFile>>(async () =>
         {
-            EnsureSftpConnected();
-            var result = new List<RemoteFile>();
-            await Task.Run(() => SftpRecursiveList(path, result), ct);
-            return result;
-        }
-        else
-        {
-            EnsureFtpConnected();
-            var items = await _ftpClient!.GetListing(path, FtpListOption.Recursive, ct);
-            return items
-                .Where(i => i.Name is not "." and not "..")
-                .Select(i => new RemoteFile(
-                    i.Name,
-                    i.FullName,
-                    i.Size,
-                    i.Type == FtpObjectType.Directory,
-                    i.RawModified))
-                .ToArray();
-        }
-    }
+            if (_isSftp)
+            {
+                var result = new List<RemoteFile>();
+                await Task.Run(() => SftpRecursiveList(path, result), ct);
+                return result;
+            }
+            else
+            {
+                var items = await _ftpClient!.GetListing(path, FtpListOption.Recursive, ct);
+                return items
+                    .Where(i => i.Name is not "." and not "..")
+                    .Select(i => new RemoteFile(
+                        i.Name,
+                        i.FullName,
+                        i.Size,
+                        i.Type == FtpObjectType.Directory,
+                        i.RawModified))
+                    .ToArray();
+            }
+        }, ct);
 
     private void SftpRecursiveDelete(string path)
     {
@@ -356,35 +383,18 @@ public class FtpService : IFtpService, IDisposable
         }
     }
 
-    public async Task MoveAsync(string fromPath, string toPath, CancellationToken ct = default)
-    {
-        if (_isSftp)
+    public Task MoveAsync(string fromPath, string toPath, CancellationToken ct = default)
+        => RunAsync(async () =>
         {
-            EnsureSftpConnected();
-            await Task.Run(() => _sftpClient!.RenameFile(fromPath, toPath), ct);
-        }
-        else
-        {
-            EnsureFtpConnected();
-            await _ftpClient!.MoveFile(fromPath, toPath, FtpRemoteExists.Skip, ct);
-        }
-    }
+            if (_isSftp)
+                await Task.Run(() => _sftpClient!.RenameFile(fromPath, toPath), ct);
+            else
+                await _ftpClient!.MoveFile(fromPath, toPath, FtpRemoteExists.Skip, ct);
+        }, ct);
 
     public void Dispose()
     {
-        _sftpClient?.Dispose();
-        _ftpClient?.Dispose();
-    }
-
-    private void EnsureSftpConnected()
-    {
-        if (_sftpClient is not { IsConnected: true })
-            throw new InvalidOperationException("Not connected to SFTP server.");
-    }
-
-    private void EnsureFtpConnected()
-    {
-        if (_ftpClient is not { IsConnected: true })
-            throw new InvalidOperationException("Not connected to FTP server.");
+        try { _sftpClient?.Dispose(); } catch { }
+        try { _ftpClient?.Dispose(); } catch { }
     }
 }
