@@ -12,6 +12,8 @@
         <!-- 关闭调试符号 -->
         <DebugType>none</DebugType>
         <DebugSymbols>false</DebugSymbols>
+        <!-- 禁用 NuGet 漏洞审计以避免网络警告 -->
+        <NuGetAudit>false</NuGetAudit>
     </PropertyGroup>
 
     <!-- 删除调试文件 -->

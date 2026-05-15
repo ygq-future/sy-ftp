@@ -166,6 +166,15 @@ public static class Strings
         ["settings.path.browse"] = "Browse…",
         ["settings.path.reset"] = "Reset",
         ["settings.btn.close"] = "Close",
+
+        // Password dialog
+        ["password.dialog.title"] = "Connect to {0}",
+        ["password.dialog.label"] = "Password",
+        ["password.dialog.remember"] = "Remember password",
+        ["password.dialog.error"] = "Password cannot be empty",
+        ["password.btn.cancel"] = "Cancel",
+        ["password.btn.ok"] = "OK",
+        ["status.cancelled"] = "Connection cancelled",
     };
 
     public static readonly IReadOnlyDictionary<string, string> Zh = new Dictionary<string, string>
@@ -330,5 +339,15 @@ public static class Strings
         ["settings.path.browse"] = "浏览…",
         ["settings.path.reset"] = "重置",
         ["settings.btn.close"] = "关闭",
+
+        // Password dialog
+        ["password.dialog.title"] = "连接到 {0}",
+        ["password.dialog.label"] = "密码",
+        ["password.dialog.remember"] = "记住密码",
+        ["password.dialog.error"] = "密码不能为空",
+        ["password.btn.cancel"] = "取消",
+        ["password.btn.ok"] = "确定",
+        ["status.cancelled"] = "连接已取消",
+        ["status.cancelled"] = "连接已取消",
     };
 }

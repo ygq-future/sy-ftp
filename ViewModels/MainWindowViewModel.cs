@@ -184,6 +184,38 @@ public partial class MainWindowViewModel : ViewModelBase
         await dlg.ShowDialog(mainWindow);
     }
 
+    /// <summary>
+    /// Prompts for password if the host doesn't have one saved.
+    /// Returns the password to use (either saved or user-provided), or null if cancelled.
+    /// </summary>
+    private async Task<string?> PromptPasswordIfNeededAsync(FtpHost host)
+    {
+        if (!string.IsNullOrEmpty(host.Password))
+            return host.Password;
+
+        var lifetime = Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = lifetime?.MainWindow;
+        if (mainWindow is null) return null;
+
+        var (password, remember) = await Views.PasswordDialog.ShowAsync(mainWindow, host.Name);
+
+        if (password is null)
+        {
+            StatusText = Loc.Tr("status.cancelled");
+            return null;
+        }
+
+        // Only save to host if user checked "Remember"
+        if (remember)
+        {
+            host.Password = password;
+            SaveConfig();
+        }
+
+        return password;
+    }
+
     [RelayCommand]
     private async Task ConnectAsync(CancellationToken ct)
     {
@@ -199,12 +231,26 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
+        // Prompt for password if needed
+        var password = await PromptPasswordIfNeededAsync(host);
+        if (password is null)
+            return;
+
         IsBusy = true;
         StatusText = Loc.Tr("status.connecting");
         var ftp = new FtpService();
         try
         {
+            // Temporarily set password for this connection
+            var originalPassword = host.Password;
+            host.Password = password;
+
             await ftp.ConnectAsync(host, ct);
+
+            // Restore original password if it wasn't saved (user didn't check "Remember")
+            if (string.IsNullOrEmpty(originalPassword))
+                host.Password = originalPassword;
+
             var homeDir = await ftp.GetWorkingDirectoryAsync(ct);
             var session = new HostSession { HostId = host.Id, Host = host, Ftp = ftp, CurrentPath = homeDir };
             _sessions[host.Id] = session;
@@ -260,13 +306,28 @@ public partial class MainWindowViewModel : ViewModelBase
     /// connected indicator lights up automatically via FtpHost.IsConnected).
     /// Does NOT switch the main file browser to this host.
     /// </summary>
-    public async Task<HostSession> EnsureSessionAsync(FtpHost host, CancellationToken ct)
+    public async Task<HostSession?> EnsureSessionAsync(FtpHost host, CancellationToken ct)
     {
         if (_sessions.TryGetValue(host.Id, out var existing))
             return existing;
 
+        // Prompt for password if needed
+        var password = await PromptPasswordIfNeededAsync(host);
+        if (password is null)
+            return null;
+
         var ftp = new FtpService();
+
+        // Temporarily set password for this connection
+        var originalPassword = host.Password;
+        host.Password = password;
+
         await ftp.ConnectAsync(host, ct);
+
+        // Restore original password if it wasn't saved (user didn't check "Remember")
+        if (string.IsNullOrEmpty(originalPassword))
+            host.Password = originalPassword;
+
         var homeDir = await ftp.GetWorkingDirectoryAsync(ct);
         var session = new HostSession { HostId = host.Id, Host = host, Ftp = ftp, CurrentPath = homeDir };
         _sessions[host.Id] = session;
