@@ -348,5 +348,6 @@ public static class Strings
         ["password.btn.cancel"] = "取消",
         ["password.btn.ok"] = "确定",
         ["status.cancelled"] = "连接已取消",
+        ["status.cancelled"] = "连接已取消",
     };
 }
