@@ -147,15 +147,16 @@ private async Task ConnectAsync(CancellationToken ct)
     var ftp = new FtpService();
     try
     {
-        // 使用临时 host 副本（包含密码）进行连接
-        var hostWithPassword = host.Password == password ? host : new FtpHost
-        {
-            Host = host.Host,
-            Port = host.Port,
-            Username = host.Username,
-            Password = password,
-        };
-        await ftp.ConnectAsync(hostWithPassword, ct);
+        // 如果用户没有勾选 Remember，临时设置密码用于本次连接
+        var originalPassword = host.Password;
+        if (string.IsNullOrEmpty(host.Password))
+            host.Password = password;
+        
+        await ftp.ConnectAsync(host, ct);
+        
+        // 如果用户没有勾选 Remember，恢复原密码（空）
+        if (string.IsNullOrEmpty(originalPassword))
+            host.Password = originalPassword;
         
         // ... 其余连接逻辑保持不变
     }
