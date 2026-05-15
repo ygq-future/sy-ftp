@@ -86,6 +86,13 @@ public partial class TransferBrowserDialog : Window
         try
         {
             var session = await _mainVm.EnsureSessionAsync(_destHost, CancellationToken.None);
+            if (session is null)
+            {
+                // User cancelled password prompt
+                _destFtp = null;
+                EnterDisconnectedState();
+                return;
+            }
             _destFtp = session.Ftp;
             EnterConnectedState();
             await LoadPathAsync(session.CurrentPath ?? "/");

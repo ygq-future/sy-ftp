@@ -184,6 +184,38 @@ public partial class MainWindowViewModel : ViewModelBase
         await dlg.ShowDialog(mainWindow);
     }
 
+    /// <summary>
+    /// Prompts for password if the host doesn't have one saved.
+    /// Returns true if password is available (either already saved or user provided it).
+    /// Returns false if user cancelled the prompt.
+    /// </summary>
+    private async Task<bool> PromptPasswordIfNeededAsync(FtpHost host)
+    {
+        if (!string.IsNullOrEmpty(host.Password))
+            return true;
+
+        var lifetime = Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime;
+        var mainWindow = lifetime?.MainWindow;
+        if (mainWindow is null) return false;
+
+        var (password, remember) = await Views.PasswordDialog.ShowAsync(mainWindow, host.Name);
+
+        if (password is null)
+        {
+            StatusText = Loc.Tr("status.connection.cancelled");
+            return false;
+        }
+
+        host.Password = password;
+        if (remember)
+        {
+            SaveConfig();
+        }
+
+        return true;
+    }
+
     [RelayCommand]
     private async Task ConnectAsync(CancellationToken ct)
     {
@@ -198,6 +230,10 @@ public partial class MainWindowViewModel : ViewModelBase
             StatusText = Loc.Tr("status.connected", host.Name);
             return;
         }
+
+        // Prompt for password if needed
+        if (!await PromptPasswordIfNeededAsync(host))
+            return;
 
         IsBusy = true;
         StatusText = Loc.Tr("status.connecting");
@@ -260,10 +296,14 @@ public partial class MainWindowViewModel : ViewModelBase
     /// connected indicator lights up automatically via FtpHost.IsConnected).
     /// Does NOT switch the main file browser to this host.
     /// </summary>
-    public async Task<HostSession> EnsureSessionAsync(FtpHost host, CancellationToken ct)
+    public async Task<HostSession?> EnsureSessionAsync(FtpHost host, CancellationToken ct)
     {
         if (_sessions.TryGetValue(host.Id, out var existing))
             return existing;
+
+        // Prompt for password if needed
+        if (!await PromptPasswordIfNeededAsync(host))
+            return null;
 
         var ftp = new FtpService();
         await ftp.ConnectAsync(host, ct);
