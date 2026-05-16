@@ -13,6 +13,7 @@
         x:Class="sy_ftp.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:Name="RootWindow"
+        Classes.has-bg="{Binding HasBackgroundImage}"
         Title="SY-FTP"
         Topmost="{Binding IsTopmost}"
         Width="900" Height="560"
@@ -129,7 +130,7 @@
             <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="Button.sidebar-add-btn /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightStart}" />
             <Setter Property="Transitions">
                 <Transitions>
                     <BrushTransition Property="Background" Duration="0:0:0.18" />
@@ -137,7 +138,7 @@
             </Setter>
         </Style>
         <Style Selector="Button.sidebar-add-btn:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightPointerover}" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
         </Style>
         <Style Selector="Button.sidebar-add-btn:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightActive}" />
@@ -151,7 +152,7 @@
             <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="Button.sidebar-delete-btn /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorDangerLight}" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorDangerLightStart}" />
             <Setter Property="Transitions">
                 <Transitions>
                     <BrushTransition Property="Background" Duration="0:0:0.18" />
@@ -159,7 +160,7 @@
             </Setter>
         </Style>
         <Style Selector="Button.sidebar-delete-btn:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorDangerLightPointerover}" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorDangerLight}" />
         </Style>
         <Style Selector="Button.sidebar-delete-btn:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SemiColorDangerLightActive}" />
@@ -195,6 +196,7 @@
 
         <!-- ── Host card: primary highlight when selected ── -->
         <Style Selector="ListBox.host-list ListBoxItem Border.host-card">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill0}" />
             <Setter Property="Transitions">
                 <Transitions>
                     <BrushTransition Property="Background" Duration="0:0:0.12" />
@@ -202,8 +204,19 @@
                 </Transitions>
             </Setter>
         </Style>
+        <Style Selector="Window.has-bg ListBox.host-list ListBoxItem Border.host-card">
+            <!-- Use SemiColorPrimaryLightStart (zero-alpha version of PrimaryLight) instead
+                 of Transparent. Transparent (#00FFFFFF) would interpolate through a white
+                 tint during BrushTransition, flashing in dark theme. Same-hue start avoids
+                 the flash while keeping the smooth fade. -->
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightStart}" />
+        </Style>
         <Style Selector="ListBox.host-list ListBoxItem:pointerover Border.host-card">
             <Setter Property="Background" Value="{DynamicResource SemiColorFill1}" />
+        </Style>
+        <!-- has-bg: use accent tint instead of fill1 so dark theme doesn't darken too much -->
+        <Style Selector="Window.has-bg ListBox.host-list ListBoxItem:pointerover Border.host-card">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLight}" />
         </Style>
         <Style Selector="ListBox.host-list ListBoxItem:selected Border.host-card">
             <Setter Property="BorderBrush" Value="{DynamicResource SemiColorPrimary}" />
@@ -382,12 +395,15 @@
             <Setter Property="CornerRadius" Value="6" />
         </Style>
         <Style Selector="ListBox.file-list ListBoxItem /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
+            <!-- Use SemiColorPrimaryLightStart (zero-alpha PrimaryLight) for the idle background.
+                 Visually identical to Transparent but transitions through the same hue, so the
+                 fade-in to PrimaryLight on hover doesn't flash white in dark theme. -->
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightStart}" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.08" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter>
         </Style>
@@ -456,17 +472,41 @@
             <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryLightActive}" />
         </Style>
 
+        <!-- ── Path bar: transparent when background image is set ── -->
+        <Style Selector="Border.path-bar">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill0}" />
+        </Style>
+        <Style Selector="Window.has-bg Border.path-bar">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <!-- ── Tag ComboBox: transparent when background image is set ── -->
+        <Style Selector="ComboBox#TagComboBox">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFill0}" />
+        </Style>
+        <Style Selector="Window.has-bg ComboBox#TagComboBox">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
     </Window.Styles>
 
-    <!-- Root: title bar row + content rows -->
-    <Grid RowDefinitions="38,*,Auto"
-          DoubleTapped="OnAnywhereDoubleTapped">
+    <!-- Root: background layer + title bar row + content rows -->
+    <Panel>
+        <!-- Full-window background image layer (behind everything, covers title bar) -->
+        <Image Source="{Binding BackgroundImage}"
+               Stretch="UniformToFill"
+               Opacity="{Binding BackgroundOpacity}"
+               IsVisible="{Binding BackgroundImage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+        <!-- Main content grid -->
+        <Grid RowDefinitions="38,*,Auto"
+              DoubleTapped="OnAnywhereDoubleTapped">
 
         <!-- ══════════════════════════════════════════
              Custom Title Bar / Toolbar Row
              ══════════════════════════════════════════ -->
         <Grid Grid.Row="0"
-              Background="{DynamicResource SemiColorBackground1}"
+              Background="Transparent"
               ColumnDefinitions="Auto,Auto,*,Auto,Auto"
               PointerPressed="OnTitleBarPointerPressed"
               DoubleTapped="OnTitleBarDoubleTapped">
@@ -648,12 +688,16 @@
         <Grid Grid.Row="1" ColumnDefinitions="220,6,*" Margin="8,8,8,0">
 
             <!-- ── Sidebar Card ── -->
-            <Border Grid.Column="0"
-                    CornerRadius="12"
-                    BoxShadow="0 2 8 0 #1A000000"
-                    Background="{DynamicResource SemiColorNavBackground}"
-                    BorderBrush="{DynamicResource SemiColorBorder}"
-                    BorderThickness="1">
+            <Panel Grid.Column="0">
+                <!-- Fill layer: full opacity when no bg image, subtle tint otherwise -->
+                <Border CornerRadius="12"
+                        Background="{DynamicResource SemiColorNavBackground}"
+                        Opacity="{Binding PanelFillOpacity}" />
+                <!-- Outline + content layer -->
+                <Border CornerRadius="12"
+                        BoxShadow="0 2 8 0 #1A000000"
+                        BorderBrush="{DynamicResource SemiColorBorder}"
+                        BorderThickness="1">
                 <Grid RowDefinitions="Auto,Auto,*">
 
                     <!-- Header -->
@@ -698,7 +742,6 @@
                                   HorizontalAlignment="Stretch"
                                   BorderThickness="1"
                                   BorderBrush="{DynamicResource SemiColorBorder}"
-                                  Background="{DynamicResource SemiColorFill0}"
                                   CornerRadius="8"
                                   Padding="10,5">
                             <ComboBox.ItemTemplate>
@@ -775,7 +818,6 @@
                                 <Border Classes="host-card"
                                         Padding="10,9" Margin="0,0,0,4"
                                         CornerRadius="8"
-                                        Background="{DynamicResource SemiColorFill0}"
                                         BorderBrush="{DynamicResource SemiColorBorder}"
                                         BorderThickness="1">
                                     <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto">
@@ -812,16 +854,21 @@
 
                 </Grid>
             </Border>
+            </Panel>
 
             <!-- gap column — no splitter -->
 
             <!-- ── File Browser Card ── -->
-            <Border Grid.Column="2"
-                    CornerRadius="12"
-                    BoxShadow="0 2 8 0 #1A000000"
-                    Background="{DynamicResource SemiColorBackground0}"
-                    BorderBrush="{DynamicResource SemiColorBorder}"
-                    BorderThickness="1">
+            <Panel Grid.Column="2">
+                <!-- Fill layer: full opacity when no bg image, subtle tint otherwise -->
+                <Border CornerRadius="12"
+                        Background="{DynamicResource SemiColorBackground0}"
+                        Opacity="{Binding PanelFillOpacity}" />
+                <!-- Outline + content layer -->
+                <Border CornerRadius="12"
+                        BoxShadow="0 2 8 0 #1A000000"
+                        BorderBrush="{DynamicResource SemiColorBorder}"
+                        BorderThickness="1">
                 <Grid RowDefinitions="Auto,Auto,*">
 
                     <!-- Path breadcrumb -->
@@ -829,7 +876,6 @@
                             BorderBrush="{DynamicResource SemiColorBorder}"
                             BorderThickness="0,0,0,1">
                         <Border Classes="path-bar"
-                                Background="{DynamicResource SemiColorFill0}"
                                 CornerRadius="8" Padding="10,5"
                                 VerticalAlignment="Center"
                                 IsEnabled="{Binding IsConnected}"
@@ -1354,19 +1400,24 @@
                     </Grid>
                 </Grid>
             </Border>
+            </Panel>
 
         </Grid>
 
         <!-- ══════════════════════════════════════════
              Status Bar
              ══════════════════════════════════════════ -->
-        <Border Grid.Row="2"
-                CornerRadius="12"
-                BoxShadow="0 2 6 0 #14000000"
-                Background="{DynamicResource SemiColorBackground1}"
-                BorderBrush="{DynamicResource SemiColorBorder}"
-                BorderThickness="1"
-                Padding="14,5" Margin="8,6,8,8">
+        <Panel Grid.Row="2" Margin="8,6,8,8">
+            <!-- Fill layer: full opacity when no bg image, subtle tint otherwise -->
+            <Border CornerRadius="12"
+                    Background="{DynamicResource SemiColorBackground1}"
+                    Opacity="{Binding PanelFillOpacity}" />
+            <!-- Outline + content layer -->
+            <Border CornerRadius="12"
+                    BoxShadow="0 2 6 0 #14000000"
+                    BorderBrush="{DynamicResource SemiColorBorder}"
+                    BorderThickness="1"
+                    Padding="14,5">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto">
                 <Panel Grid.Column="0" Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center">
                     <PathIcon Data="{pia:IconGeometry Icon=circle, IconType=fill}"
@@ -1475,7 +1526,9 @@
                 </StackPanel>
             </Grid>
         </Border>
+        </Panel>
 
     </Grid>
+    </Panel>
 
 </Window>

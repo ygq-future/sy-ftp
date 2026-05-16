@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia;
+using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -46,6 +48,27 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _accentColor = "#2296F5";
 
+    [ObservableProperty]
+    private string? _backgroundImagePath;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PanelFillOpacity))]
+    [NotifyPropertyChangedFor(nameof(HasBackgroundImage))]
+    private Bitmap? _backgroundImage;
+
+    [ObservableProperty]
+    private double _backgroundOpacity = 0.3;
+
+    /// <summary>True when a background image is currently loaded.</summary>
+    public bool HasBackgroundImage => BackgroundImage is not null;
+
+    /// <summary>
+    /// Opacity for panel fill layers (sidebar, file browser, status bar).
+    /// Full opacity when no background image is set, subtle tint otherwise so
+    /// the background image shows through while panels still feel like cards.
+    /// </summary>
+    public double PanelFillOpacity => BackgroundImage is null ? 1.0 : 0.25;
+
     /// <summary>Extended palette used by the Settings window.</summary>
     public IReadOnlyList<AccentColorOption> AccentColors => AccentPalette.Options;
 
@@ -64,6 +87,12 @@ public partial class MainWindowViewModel : ViewModelBase
         var saved = App.LoadAccentColor();
         _accentColor = saved;
         App.ApplyAccentColor(saved);
+
+        // Load background settings
+        var settings = SettingsService.Current;
+        _backgroundImagePath = settings.BackgroundImagePath;
+        _backgroundOpacity = settings.BackgroundOpacity;
+        LoadBackgroundImageFile(_backgroundImagePath);
 
         // Load persisted config
         var config = App.LoadConfig();
@@ -153,6 +182,35 @@ public partial class MainWindowViewModel : ViewModelBase
         AccentColor = hex;
         App.ApplyAccentColor(hex);
         App.SaveAccentColor(hex);
+    }
+
+    public void ApplyBackgroundImage(string? path, double opacity)
+    {
+        BackgroundImagePath = path;
+        BackgroundOpacity = opacity;
+        LoadBackgroundImageFile(path);
+        var settings = SettingsService.Current;
+        settings.BackgroundImagePath = path;
+        settings.BackgroundOpacity = opacity;
+        SettingsService.Save();
+    }
+
+    private void LoadBackgroundImageFile(string? path)
+    {
+        BackgroundImage?.Dispose();
+        BackgroundImage = null;
+
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return;
+
+        try
+        {
+            BackgroundImage = new Bitmap(path);
+        }
+        catch
+        {
+            BackgroundImage = null;
+        }
     }
 
     partial void OnIsDarkModeChanged(bool value)
