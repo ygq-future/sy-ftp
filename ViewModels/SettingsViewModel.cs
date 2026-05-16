@@ -80,6 +80,25 @@ public partial class SettingsViewModel : ViewModelBase
     private string _accentColor = "#2296F5";
 
     [ObservableProperty]
+    private string? _backgroundImagePath;
+
+    [ObservableProperty]
+    private double _backgroundOpacity = 0.3;
+
+    public double BackgroundOpacityPercent
+    {
+        get => BackgroundOpacity * 100;
+        set
+        {
+            var newOpacity = value / 100.0;
+            if (Math.Abs(BackgroundOpacity - newOpacity) > 0.001)
+            {
+                BackgroundOpacity = newOpacity;
+            }
+        }
+    }
+
+    [ObservableProperty]
     private string _defaultDownloadPath = "";
 
     [ObservableProperty]
@@ -93,6 +112,8 @@ public partial class SettingsViewModel : ViewModelBase
         _selectedLanguage = Languages.FirstOrDefault(l => l.Code == s.Language) ?? Languages[0];
         _isDarkMode = main.IsDarkMode;
         _accentColor = main.AccentColor;
+        _backgroundImagePath = s.BackgroundImagePath;
+        _backgroundOpacity = s.BackgroundOpacity;
         _defaultDownloadPath = s.DefaultDownloadPath ?? "";
         _defaultDataPath = s.DefaultDataPath ?? "";
     }
@@ -116,6 +137,28 @@ public partial class SettingsViewModel : ViewModelBase
         if (option is null) return;
         AccentColor = option.Hex;
         _main.ApplyAccentHex(option.Hex);
+    }
+
+    partial void OnBackgroundOpacityChanged(double value)
+    {
+        OnPropertyChanged(nameof(BackgroundOpacityPercent));
+        _main.ApplyBackgroundImage(BackgroundImagePath, value);
+    }
+
+    [RelayCommand]
+    private async Task BrowseBackgroundAsync()
+    {
+        var picked = await PickImageFileAsync();
+        if (picked is null) return;
+        BackgroundImagePath = picked;
+        _main.ApplyBackgroundImage(picked, BackgroundOpacity);
+    }
+
+    [RelayCommand]
+    private void ClearBackground()
+    {
+        BackgroundImagePath = null;
+        _main.ApplyBackgroundImage(null, BackgroundOpacity);
     }
 
     [RelayCommand]
@@ -247,6 +290,11 @@ public partial class SettingsViewModel : ViewModelBase
             // Apply window topmost
             _main.IsTopmost = settings.WindowTopmost;
 
+            // Apply background image
+            _main.ApplyBackgroundImage(settings.BackgroundImagePath, settings.BackgroundOpacity);
+            BackgroundImagePath = settings.BackgroundImagePath;
+            BackgroundOpacity = settings.BackgroundOpacity;
+
             await ShowMessageAsync(Loc.Tr("settings.backup.import.success"));
 
             // Reload hosts in main window
@@ -348,6 +396,28 @@ public partial class SettingsViewModel : ViewModelBase
         var folders = await owner.StorageProvider.OpenFolderPickerAsync(
             new FolderPickerOpenOptions { AllowMultiple = false });
         return folders.Count == 0 ? null : folders[0].TryGetLocalPath();
+    }
+
+    private static async Task<string?> PickImageFileAsync()
+    {
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        var owner = lifetime?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? lifetime?.MainWindow;
+        if (owner is null) return null;
+
+        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = LocalizationService.Instance.Tr("settings.background.browse"),
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Image Files")
+                {
+                    Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp" }
+                }
+            }
+        });
+
+        return files.Count == 0 ? null : files[0].TryGetLocalPath();
     }
 }
 

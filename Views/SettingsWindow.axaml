@@ -437,6 +437,58 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{l:Tr settings.background}" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText2}" />
+                                <TextBlock Text="{l:Tr settings.background.hint}" FontSize="11"
+                                           Foreground="{DynamicResource SemiColorText3}"
+                                           TextWrapping="Wrap" />
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6" MaxWidth="500">
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding BackgroundImagePath, Mode=OneWay}"
+                                             PlaceholderText="{l:Tr settings.background.placeholder}"
+                                             IsReadOnly="True"
+                                             Background="{DynamicResource SemiColorFill0}"
+                                             BorderBrush="{DynamicResource SemiColorBorder}"
+                                             CornerRadius="6" Padding="10,7" />
+                                    <Button Grid.Column="1"
+                                            Command="{Binding BrowseBackgroundCommand}"
+                                            Classes="dialog-btn-outline"
+                                            Background="Transparent"
+                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                            BorderThickness="1"
+                                            Foreground="{DynamicResource SemiColorText1}"
+                                            Content="{l:Tr settings.background.browse}"
+                                            CornerRadius="6" Padding="14,6" />
+                                    <Button Grid.Column="2"
+                                            Command="{Binding ClearBackgroundCommand}"
+                                            Classes="dialog-btn-outline"
+                                            Background="Transparent"
+                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                            BorderThickness="1"
+                                            Foreground="{DynamicResource SemiColorText1}"
+                                            Content="{l:Tr settings.background.clear}"
+                                            CornerRadius="6" Padding="14,6" />
+                                </Grid>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{l:Tr settings.background.opacity}" FontSize="12"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" MaxWidth="500">
+                                        <Slider Grid.Column="0"
+                                                Value="{Binding BackgroundOpacityPercent}"
+                                                Minimum="10" Maximum="100"
+                                                TickFrequency="1"
+                                                IsSnapToTickEnabled="True" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding BackgroundOpacityPercent, StringFormat='{}{0:F0}%'}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource SemiColorText1}"
+                                                   VerticalAlignment="Center"
+                                                   MinWidth="40" />
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- Paths -->

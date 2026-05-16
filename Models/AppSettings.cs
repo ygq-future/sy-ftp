@@ -9,4 +9,6 @@ public class AppSettings
     public string? DefaultDataPath { get; set; }
     public List<FtpHost> Hosts { get; set; } = new();
     public bool WindowTopmost { get; set; }
+    public string? BackgroundImagePath { get; set; }
+    public double BackgroundOpacity { get; set; } = 0.3;
 }

@@ -56,7 +56,9 @@ public static class ConfigBackupService
                 settings.Language,
                 settings.DefaultDownloadPath,
                 settings.DefaultDataPath,
-                settings.WindowTopmost
+                settings.WindowTopmost,
+                settings.BackgroundImagePath,
+                settings.BackgroundOpacity
             },
             Hosts = exportHosts
         };
@@ -121,6 +123,10 @@ public static class ConfigBackupService
             settings.DefaultDownloadPath = importData.Settings.DefaultDownloadPath;
             settings.DefaultDataPath = importData.Settings.DefaultDataPath;
             settings.WindowTopmost = importData.Settings.WindowTopmost;
+            settings.BackgroundImagePath = importData.Settings.BackgroundImagePath;
+            // Opacity defaults to 0 in struct deserialization; only apply if non-zero
+            if (importData.Settings.BackgroundOpacity > 0)
+                settings.BackgroundOpacity = importData.Settings.BackgroundOpacity;
         }
 
         settings.Hosts = restoredHosts;
@@ -243,5 +249,7 @@ public static class ConfigBackupService
         public string? DefaultDownloadPath { get; set; }
         public string? DefaultDataPath { get; set; }
         public bool WindowTopmost { get; set; }
+        public string? BackgroundImagePath { get; set; }
+        public double BackgroundOpacity { get; set; }
     }
 }
