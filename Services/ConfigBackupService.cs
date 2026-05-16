@@ -141,12 +141,12 @@ public static class ConfigBackupService
         var salt = RandomNumberGenerator.GetBytes(SaltSize);
 
         // Derive key from password using PBKDF2
-        using var pbkdf2 = new Rfc2898DeriveBytes(
+        var key = Rfc2898DeriveBytes.Pbkdf2(
             password,
             salt,
             Iterations,
-            HashAlgorithmName.SHA256);
-        var key = pbkdf2.GetBytes(32); // 256-bit key
+            HashAlgorithmName.SHA256,
+            32); // 256-bit key
 
         // Generate random nonce
         var nonce = RandomNumberGenerator.GetBytes(NonceSize);
@@ -196,13 +196,13 @@ public static class ConfigBackupService
             var ciphertext = reader.ReadBytes((int)(ms.Length - ms.Position - TagSize));
             var tag = reader.ReadBytes(TagSize);
 
-            // Derive key from password
-            using var pbkdf2 = new Rfc2898DeriveBytes(
+            // Derive key from password using PBKDF2
+            var key = Rfc2898DeriveBytes.Pbkdf2(
                 password,
                 salt,
                 Iterations,
-                HashAlgorithmName.SHA256);
-            var key = pbkdf2.GetBytes(32);
+                HashAlgorithmName.SHA256,
+                32);
 
             // Decrypt
             var plaintext = new byte[ciphertext.Length];

@@ -28,13 +28,13 @@ public static class EncryptionUtil
         // Generate random salt
         var salt = RandomNumberGenerator.GetBytes(SaltSize);
 
-        // Derive key from password
-        using var pbkdf2 = new Rfc2898DeriveBytes(
+        // Derive key from password using PBKDF2
+        var key = Rfc2898DeriveBytes.Pbkdf2(
             password,
             salt,
             Iterations,
-            HashAlgorithmName.SHA256);
-        var key = pbkdf2.GetBytes(KeySize);
+            HashAlgorithmName.SHA256,
+            KeySize);
 
         // Generate random nonce
         var nonce = RandomNumberGenerator.GetBytes(NonceSize);
@@ -88,13 +88,13 @@ public static class EncryptionUtil
             Buffer.BlockCopy(data, SaltSize + NonceSize, encrypted, 0, encryptedLength);
             Buffer.BlockCopy(data, SaltSize + NonceSize + encryptedLength, tag, 0, TagSize);
 
-            // Derive key from password
-            using var pbkdf2 = new Rfc2898DeriveBytes(
+            // Derive key from password using PBKDF2
+            var key = Rfc2898DeriveBytes.Pbkdf2(
                 password,
                 salt,
                 Iterations,
-                HashAlgorithmName.SHA256);
-            var key = pbkdf2.GetBytes(KeySize);
+                HashAlgorithmName.SHA256,
+                KeySize);
 
             // Decrypt
             var plaintext = new byte[encrypted.Length];
