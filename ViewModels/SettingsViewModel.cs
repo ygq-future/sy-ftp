@@ -1,13 +1,20 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using sy_ftp.Helpers;
 using sy_ftp.Models;
+using sy_ftp.Resources;
 using sy_ftp.Services;
+using sy_ftp.Views;
 
 namespace sy_ftp.ViewModels;
 
@@ -28,11 +35,30 @@ public partial class SettingsViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(IsGeneralSelected))]
     [NotifyPropertyChangedFor(nameof(IsAppearanceSelected))]
     [NotifyPropertyChangedFor(nameof(IsPathsSelected))]
+    [NotifyPropertyChangedFor(nameof(IsAboutSelected))]
     private int _selectedSectionIndex;
 
     public bool IsGeneralSelected => SelectedSectionIndex == 0;
     public bool IsAppearanceSelected => SelectedSectionIndex == 1;
     public bool IsPathsSelected => SelectedSectionIndex == 2;
+    public bool IsAboutSelected => SelectedSectionIndex == 3;
+
+    public string AppName => "SY-FTP";
+    public string AppVersion
+    {
+        get
+        {
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            if (version != null && version.Major > 0)
+            {
+                return $"{version.Major}.{version.Minor}.{version.Build}";
+            }
+            return "1.0.3";
+        }
+    }
+    public string Developer => "ygq-future";
+    public string License => "Apache-2.0";
+    public string GitHubUrl => "https://github.com/ygq-future/sy-ftp";
 
     [ObservableProperty]
     private LanguageOption _selectedLanguage;
@@ -51,7 +77,7 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     [ObservableProperty]
-    private string _accentColor = "#4050B5";
+    private string _accentColor = "#2296F5";
 
     [ObservableProperty]
     private string _defaultDownloadPath = "";
@@ -128,6 +154,189 @@ public partial class SettingsViewModel : ViewModelBase
         DefaultDataPath = def;
         SettingsService.Current.DefaultDataPath = def;
         SettingsService.Save();
+    }
+
+    [RelayCommand]
+    private void OpenGitHub()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(GitHubUrl)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch { /* Ignore if browser fails to open */ }
+    }
+
+    [RelayCommand]
+    private async Task ExportBackupAsync()
+    {
+        try
+        {
+            // Get password from user
+            var password = await PromptPasswordAsync(
+                Loc.Tr("settings.backup.password.title"),
+                Loc.Tr("settings.backup.password.export.label")
+            );
+
+            if (string.IsNullOrEmpty(password))
+                return;
+
+            // Pick save location
+            var filePath = await PickSaveFileAsync();
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            // Export backup
+            ConfigBackupService.ExportConfig(password, filePath);
+            await ShowMessageAsync(Loc.Tr("settings.backup.export.success"));
+        }
+        catch (Exception ex)
+        {
+            await ShowMessageAsync(string.Format(Loc.Tr("settings.backup.export.error"), ex.Message));
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportBackupAsync()
+    {
+        try
+        {
+            // Pick backup file
+            var filePath = await PickOpenFileAsync();
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            // Get password from user
+            var password = await PromptPasswordAsync(
+                Loc.Tr("settings.backup.password.title"),
+                Loc.Tr("settings.backup.password.import.label")
+            );
+
+            if (string.IsNullOrEmpty(password))
+                return;
+
+            // Import backup
+            ConfigBackupService.ImportConfig(password, filePath);
+
+            // Apply imported settings to running application
+            var settings = SettingsService.Current;
+
+            // Apply theme
+            var theme = settings.Theme switch
+            {
+                "Dark" => ThemeVariant.Dark,
+                "Light" => ThemeVariant.Light,
+                _ => ThemeVariant.Default
+            };
+            if (Application.Current is not null)
+            {
+                Application.Current.RequestedThemeVariant = theme;
+                _main.IsDarkMode = Application.Current.ActualThemeVariant == ThemeVariant.Dark;
+            }
+
+            // Apply accent color
+            App.ApplyAccentColor(settings.AccentColor);
+            _main.AccentColor = settings.AccentColor;
+            AccentColor = settings.AccentColor;
+
+            // Apply language
+            Loc.Language = settings.Language;
+
+            // Apply window topmost
+            _main.IsTopmost = settings.WindowTopmost;
+
+            await ShowMessageAsync(Loc.Tr("settings.backup.import.success"));
+
+            // Reload hosts in main window
+            var config = App.LoadConfig();
+            _main.HostManager.Hosts.Clear();
+            foreach (var host in config.Hosts)
+                _main.HostManager.Hosts.Add(host);
+            if (_main.HostManager.Hosts.Count > 0)
+                _main.HostManager.SelectedHost = _main.HostManager.Hosts[0];
+        }
+        catch (Exception ex)
+        {
+            await ShowMessageAsync(string.Format(Loc.Tr("settings.backup.import.error"), ex.Message));
+        }
+    }
+
+    private static async Task<string?> PromptPasswordAsync(string title, string label)
+    {
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        var owner = lifetime?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? lifetime?.MainWindow;
+        if (owner is null) return null;
+
+        var dialog = new PasswordInputDialog
+        {
+            HeaderTitle = title,
+            Message = label,
+            Placeholder = LocalizationService.Instance.Tr("settings.backup.password.placeholder")
+        };
+
+        return await dialog.ShowDialog<string?>(owner);
+    }
+
+    private static async Task ShowMessageAsync(string message)
+    {
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        var owner = lifetime?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? lifetime?.MainWindow;
+        if (owner is null) return;
+
+        var dialog = new MessageDialog
+        {
+            HeaderTitle = LocalizationService.Instance.Tr("settings.backup"),
+            Message = message
+        };
+
+        await dialog.ShowDialog(owner);
+    }
+
+    private static async Task<string?> PickSaveFileAsync()
+    {
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        var owner = lifetime?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? lifetime?.MainWindow;
+        if (owner is null) return null;
+
+        var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = LocalizationService.Instance.Tr("settings.backup.export"),
+            DefaultExtension = "sftp-backup",
+            SuggestedFileName = $"sftp-config-{DateTime.Now:yyyyMMdd-HHmmss}.sftp-backup",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("SFTP Backup")
+                {
+                    Patterns = new[] { "*.sftp-backup" }
+                }
+            }
+        });
+
+        return file?.TryGetLocalPath();
+    }
+
+    private static async Task<string?> PickOpenFileAsync()
+    {
+        var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        var owner = lifetime?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? lifetime?.MainWindow;
+        if (owner is null) return null;
+
+        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = LocalizationService.Instance.Tr("settings.backup.import"),
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("SFTP Backup")
+                {
+                    Patterns = new[] { "*.sftp-backup" }
+                }
+            }
+        });
+
+        return files.Count == 0 ? null : files[0].TryGetLocalPath();
     }
 
     private static async Task<string?> PickFolderAsync()

@@ -13,7 +13,6 @@
         x:Class="sy_ftp.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:Name="RootWindow"
-        Icon="/Assets/sy-ftp.ico"
         Title="SY-FTP"
         Topmost="{Binding IsTopmost}"
         Width="900" Height="560"
@@ -985,6 +984,8 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="45" />
                                 <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
                             <Button Grid.Column="0" Grid.ColumnSpan="2"
@@ -1000,8 +1001,9 @@
                                                Text="{Binding FileBrowser.NameSortArrow}" />
                                 </StackPanel>
                             </Button>
-                            <Button Grid.Column="2" Classes="accent-text" Padding="4,2"
+                            <Button Grid.Column="2" Classes="accent-text" Padding="0,2"
                                     HorizontalAlignment="Left"
+                                    Margin="-4,0,0,0"
                                     Command="{Binding FileBrowser.ToggleSortCommand}"
                                     CommandParameter="{x:Static vm:FileSortColumn.Size}">
                                 <StackPanel Orientation="Horizontal" Spacing="3">
@@ -1012,8 +1014,15 @@
                                                Text="{Binding FileBrowser.SizeSortArrow}" />
                                 </StackPanel>
                             </Button>
-                            <Button Grid.Column="4" Classes="accent-text" Padding="4,2"
+                            <TextBlock Grid.Column="4" Text="{l:Tr file.col.owner}" FontSize="11"
+                                       Foreground="{DynamicResource SemiColorText2}"
+                                       VerticalAlignment="Center" Padding="0,2" Margin="-2,0,0,0" />
+                            <TextBlock Grid.Column="5" Text="{l:Tr file.col.permissions}" FontSize="11"
+                                       Foreground="{DynamicResource SemiColorText2}"
+                                       VerticalAlignment="Center" Padding="0,2" Margin="-3,0,0,0" />
+                            <Button Grid.Column="6" Classes="accent-text" Padding="4,2"
                                     HorizontalAlignment="Left"
+                                    Margin="-7,0,0,0"
                                     Command="{Binding FileBrowser.ToggleSortCommand}"
                                     CommandParameter="{x:Static vm:FileSortColumn.LastModified}">
                                 <StackPanel Orientation="Horizontal" Spacing="3">
@@ -1227,6 +1236,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="45" />
                                                 <ColumnDefinition Width="30" />
+                                                <ColumnDefinition Width="90" />
+                                                <ColumnDefinition Width="80" />
                                                 <ColumnDefinition Width="120" />
                                             </Grid.ColumnDefinitions>
                                             <!-- ".." entry -->
@@ -1261,6 +1272,18 @@
                                                        Foreground="{DynamicResource SemiColorText2}"
                                                        IsVisible="{Binding IsDirectory, Converter={StaticResource BoolInverter}}" />
                                             <TextBlock Grid.Column="4"
+                                                       Text="{Binding Owner}"
+                                                       VerticalAlignment="Center" FontSize="11"
+                                                       Foreground="{DynamicResource SemiColorText2}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       IsVisible="{Binding IsParentEntry, Converter={StaticResource BoolInverter}}" />
+                                            <TextBlock Grid.Column="5"
+                                                       Text="{Binding Permissions}"
+                                                       VerticalAlignment="Center" FontSize="11"
+                                                       Foreground="{DynamicResource SemiColorText2}"
+                                                       FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace"
+                                                       IsVisible="{Binding IsParentEntry, Converter={StaticResource BoolInverter}}" />
+                                            <TextBlock Grid.Column="6"
                                                        Text="{Binding LastModified, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
                                                        VerticalAlignment="Center" FontSize="11"
                                                        Foreground="{DynamicResource SemiColorText3}"

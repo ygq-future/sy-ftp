@@ -22,7 +22,7 @@ public partial class TransferBrowserDialog : Window
     private IReadOnlyList<RemoteFile>? _sources;
 
     private FtpHost? _destHost;          // currently picked host
-    private IFtpService? _destFtp;       // active destination connection (shared session)
+    private IFtpService? _destFtp;       // independent destination connection (not shared with main window)
     private string _currentPath = "/";
     private bool _busy;
 
@@ -34,8 +34,8 @@ public partial class TransferBrowserDialog : Window
     }
 
     /// <summary>
-    /// Configure the panel. The panel uses the main window's session dictionary so any
-    /// connection made here shows up in the sidebar and vice-versa.
+    /// Configure the panel. The panel creates its own independent connection
+    /// that does not affect the main window's session state.
     /// </summary>
     public void Configure(MainWindowViewModel mainVm,
                           IFtpService sourceFtp,
@@ -56,20 +56,9 @@ public partial class TransferBrowserDialog : Window
     {
         if (HostCombo.SelectedItem is FtpHost host)
         {
-            // If the picked host already has a live session, jump straight to the browser.
-            if (_mainVm?.Sessions.TryGetValue(host.Id, out var existing) == true)
-            {
-                _destHost = host;
-                _destFtp = existing.Ftp;
-                EnterConnectedState();
-                _ = LoadPathAsync(existing.CurrentPath ?? "/");
-            }
-            else
-            {
-                _destHost = host;
-                _destFtp = null;
-                EnterDisconnectedState();
-            }
+            _destHost = host;
+            _destFtp = null;
+            EnterDisconnectedState();
         }
         else
         {
@@ -85,20 +74,41 @@ public partial class TransferBrowserDialog : Window
         ShowLoading($"Connecting to {_destHost.Name}…");
         try
         {
-            var session = await _mainVm.EnsureSessionAsync(_destHost, CancellationToken.None);
-            if (session is null)
+            // Create an independent connection for this dialog
+            _destFtp = new FtpService();
+
+            // Prompt for password if needed
+            var hostToConnect = _destHost;
+            if (string.IsNullOrEmpty(_destHost.Password))
             {
-                // User cancelled password prompt
-                _destFtp = null;
-                EnterDisconnectedState();
-                return;
+                var pwdDialog = new PasswordDialog { Title = $"Password for {_destHost.Name}" };
+                var pwd = await pwdDialog.ShowDialog<string?>(this);
+                if (string.IsNullOrEmpty(pwd))
+                {
+                    _destFtp = null;
+                    EnterDisconnectedState();
+                    return;
+                }
+                // Create a temporary host with password for connection
+                hostToConnect = new FtpHost
+                {
+                    Id = _destHost.Id,
+                    Name = _destHost.Name,
+                    Host = _destHost.Host,
+                    Port = _destHost.Port,
+                    Username = _destHost.Username,
+                    Password = pwd
+                };
             }
-            _destFtp = session.Ftp;
+
+            await _destFtp.ConnectAsync(hostToConnect);
             EnterConnectedState();
-            await LoadPathAsync(session.CurrentPath ?? "/");
+            await LoadPathAsync("/");
         }
         catch (Exception ex)
         {
+            if (_destFtp is IDisposable disposable)
+                disposable.Dispose();
             _destFtp = null;
             ShowError($"Failed to connect: {ex.Message}");
             EnterDisconnectedState();
@@ -107,8 +117,14 @@ public partial class TransferBrowserDialog : Window
 
     private async void OnDisconnectClick(object? sender, RoutedEventArgs e)
     {
-        if (_mainVm is null || _destHost is null || _busy) return;
-        try { await _mainVm.ReleaseSessionAsync(_destHost.Id, CancellationToken.None); } catch { }
+        if (_destFtp is null || _busy) return;
+        try
+        {
+            await _destFtp.DisconnectAsync();
+            if (_destFtp is IDisposable disposable)
+                disposable.Dispose();
+        }
+        catch { }
         _destFtp = null;
         _currentPath = "/";
         PathBlock.Text = "/";
@@ -315,7 +331,26 @@ public partial class TransferBrowserDialog : Window
     }
 
     // ── Window chrome ────────────────────────────────────────────────
-    private void OnCloseClick(object? sender, RoutedEventArgs e) => Close();
+    private void OnCloseClick(object? sender, RoutedEventArgs e)
+    {
+        CleanupConnection();
+        Close();
+    }
+
+    private void CleanupConnection()
+    {
+        if (_destFtp is not null)
+        {
+            try
+            {
+                _destFtp.DisconnectAsync().GetAwaiter().GetResult();
+                if (_destFtp is IDisposable disposable)
+                    disposable.Dispose();
+            }
+            catch { }
+            _destFtp = null;
+        }
+    }
 
     private void ApplyShadow()
     {

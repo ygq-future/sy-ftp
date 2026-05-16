@@ -1,0 +1,91 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:sy_ftp.Markup"
+        xmlns:pia="using:PhosphorIconsAvalonia.Markup"
+        x:Class="sy_ftp.Views.MessageDialog"
+        Width="400"
+        SizeToContent="Height"
+        WindowDecorations="None"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="Transparent">
+
+    <Window.Styles>
+        <!-- Dialog card entry animation: fade + slight scale-up -->
+        <Style Selector="Border.dialog-card">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+            <Style.Animations>
+                <Animation Duration="0:0:0.22" Easing="CubicEaseOut" FillMode="Forward">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.94" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.94" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.0" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.0" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <!-- Primary button -->
+        <Style Selector="Button.dialog-btn-primary /template/ ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.dialog-btn-primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryPointerover}" />
+        </Style>
+        <Style Selector="Button.dialog-btn-primary:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiColorPrimaryActive}" />
+        </Style>
+    </Window.Styles>
+
+    <Border x:Name="CardBorder"
+            Classes="dialog-card"
+            CornerRadius="12" Margin="8" Padding="24"
+            Background="{DynamicResource SemiColorBackground1}"
+            BorderBrush="{DynamicResource SemiColorBorder}"
+            BorderThickness="1"
+            PointerPressed="OnCardDrag">
+        <Border.RenderTransform>
+            <ScaleTransform ScaleX="1" ScaleY="1" />
+        </Border.RenderTransform>
+        <Grid RowDefinitions="Auto,Auto,Auto">
+
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,14">
+                <PathIcon Data="{pia:IconGeometry Icon=info, IconType=regular}"
+                          Width="22" Height="22"
+                          Foreground="{DynamicResource SemiColorPrimary}" />
+                <TextBlock x:Name="TitleText" FontSize="18" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SemiColorText0}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Message -->
+            <TextBlock Grid.Row="1"
+                       x:Name="MessageText"
+                       FontSize="13"
+                       Foreground="{DynamicResource SemiColorText1}"
+                       TextWrapping="Wrap" />
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                        HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
+                <Button Content="{l:Tr dialog.ok}" Click="OnOkClick"
+                        Classes="dialog-btn-primary"
+                        Background="{DynamicResource SemiColorPrimary}"
+                        Foreground="White"
+                        BorderThickness="0"
+                        CornerRadius="6" Padding="14,6" />
+            </StackPanel>
+
+        </Grid>
+    </Border>
+</Window>

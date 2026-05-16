@@ -59,34 +59,20 @@ public partial class App : Application
         SettingsService.Save();
     }
 
-    private static string ConfigFile => Path.Combine(SettingsService.ConfigDir, "config.json");
-
     public static AppConfig LoadConfig()
     {
-        try
+        return new AppConfig
         {
-            if (File.Exists(ConfigFile))
-            {
-                var json = File.ReadAllText(ConfigFile);
-                var config = JsonSerializer.Deserialize<AppConfig>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (config is not null) return config;
-            }
-        }
-        catch { }
-        return new AppConfig();
+            Hosts = SettingsService.Current.Hosts,
+            WindowTopmost = SettingsService.Current.WindowTopmost
+        };
     }
 
     public static void SaveConfig(AppConfig config)
     {
-        try
-        {
-            var dir = Path.GetDirectoryName(ConfigFile);
-            if (dir is not null) Directory.CreateDirectory(dir);
-            File.WriteAllText(ConfigFile, JsonSerializer.Serialize(config,
-                new JsonSerializerOptions { WriteIndented = true }));
-        }
-        catch { }
+        SettingsService.Current.Hosts = config.Hosts;
+        SettingsService.Current.WindowTopmost = config.WindowTopmost;
+        SettingsService.Save();
     }
 
     public static string LoadAccentColor() => SettingsService.Current.AccentColor;
@@ -102,10 +88,10 @@ public partial class App : Application
         var app = Current;
         if (app is null) return;
 
-        var isDark = app.RequestedThemeVariant == ThemeVariant.Dark;
+        var isDark = app.ActualThemeVariant == ThemeVariant.Dark;
         Color color;
         try { color = Color.Parse(hex); }
-        catch { color = Color.Parse("#4050B5"); }
+        catch { color = Color.Parse("#2296F5"); }
         var hsl = color.ToHsl();
 
         var themeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;

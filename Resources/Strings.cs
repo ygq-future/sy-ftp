@@ -40,6 +40,8 @@ public static class Strings
         // File browser
         ["file.col.name"] = "Name",
         ["file.col.size"] = "Size",
+        ["file.col.owner"] = "Owner",
+        ["file.col.permissions"] = "Permissions",
         ["file.col.modified"] = "Modified",
         ["file.empty.title"] = "Select a host and click Connect",
         ["file.items"] = "{0} items",
@@ -151,6 +153,7 @@ public static class Strings
         ["settings.section.general"] = "General",
         ["settings.section.appearance"] = "Appearance",
         ["settings.section.paths"] = "Paths",
+        ["settings.section.about"] = "About",
         ["settings.language"] = "Language",
         ["settings.language.en"] = "English",
         ["settings.language.zh"] = "中文 (Chinese)",
@@ -166,6 +169,24 @@ public static class Strings
         ["settings.path.browse"] = "Browse…",
         ["settings.path.reset"] = "Reset",
         ["settings.btn.close"] = "Close",
+        ["settings.backup"] = "Configuration Backup",
+        ["settings.backup.hint"] = "Export and import encrypted configuration backups.",
+        ["settings.backup.export"] = "Export Backup",
+        ["settings.backup.import"] = "Import Backup",
+        ["settings.backup.export.success"] = "Configuration exported successfully",
+        ["settings.backup.import.success"] = "Configuration imported successfully",
+        ["settings.backup.export.error"] = "Export failed: {0}",
+        ["settings.backup.import.error"] = "Import failed: {0}",
+        ["settings.backup.password.title"] = "Backup Password",
+        ["settings.backup.password.export.label"] = "Enter a password to encrypt the backup",
+        ["settings.backup.password.import.label"] = "Enter the password to decrypt the backup",
+        ["settings.backup.password.placeholder"] = "Enter password",
+        ["settings.backup.password.error"] = "Password cannot be empty",
+        ["settings.about.name"] = "Application Name",
+        ["settings.about.version"] = "Version",
+        ["settings.about.developer"] = "Developer",
+        ["settings.about.license"] = "License",
+        ["settings.about.github"] = "GitHub",
 
         // Password dialog
         ["password.dialog.title"] = "Connect to {0}",
@@ -175,6 +196,10 @@ public static class Strings
         ["password.btn.cancel"] = "Cancel",
         ["password.btn.ok"] = "OK",
         ["status.cancelled"] = "Connection cancelled",
+
+        // Generic dialog buttons
+        ["dialog.ok"] = "OK",
+        ["dialog.cancel"] = "Cancel",
     };
 
     public static readonly IReadOnlyDictionary<string, string> Zh = new Dictionary<string, string>
@@ -213,6 +238,8 @@ public static class Strings
         // File browser
         ["file.col.name"] = "名称",
         ["file.col.size"] = "大小",
+        ["file.col.owner"] = "所有者",
+        ["file.col.permissions"] = "权限",
         ["file.col.modified"] = "修改时间",
         ["file.empty.title"] = "请选择主机并点击连接",
         ["file.items"] = "共 {0} 项",
@@ -324,6 +351,7 @@ public static class Strings
         ["settings.section.general"] = "通用",
         ["settings.section.appearance"] = "外观",
         ["settings.section.paths"] = "路径",
+        ["settings.section.about"] = "关于",
         ["settings.language"] = "语言",
         ["settings.language.en"] = "English",
         ["settings.language.zh"] = "中文",
@@ -339,6 +367,24 @@ public static class Strings
         ["settings.path.browse"] = "浏览…",
         ["settings.path.reset"] = "重置",
         ["settings.btn.close"] = "关闭",
+        ["settings.backup"] = "配置备份",
+        ["settings.backup.hint"] = "导出和导入加密的配置备份。",
+        ["settings.backup.export"] = "导出备份",
+        ["settings.backup.import"] = "导入备份",
+        ["settings.backup.export.success"] = "配置导出成功",
+        ["settings.backup.import.success"] = "配置导入成功",
+        ["settings.backup.export.error"] = "导出失败:{0}",
+        ["settings.backup.import.error"] = "导入失败:{0}",
+        ["settings.backup.password.title"] = "备份密码",
+        ["settings.backup.password.export.label"] = "输入密码以加密备份",
+        ["settings.backup.password.import.label"] = "输入密码以解密备份",
+        ["settings.backup.password.placeholder"] = "请输入密码",
+        ["settings.backup.password.error"] = "密码不能为空",
+        ["settings.about.name"] = "应用名称",
+        ["settings.about.version"] = "版本",
+        ["settings.about.developer"] = "开发者",
+        ["settings.about.license"] = "许可证",
+        ["settings.about.github"] = "GitHub",
 
         // Password dialog
         ["password.dialog.title"] = "连接到 {0}",
@@ -349,5 +395,9 @@ public static class Strings
         ["password.btn.ok"] = "确定",
         ["status.cancelled"] = "连接已取消",
         ["status.cancelled"] = "连接已取消",
+
+        // Generic dialog buttons
+        ["dialog.ok"] = "确定",
+        ["dialog.cancel"] = "取消",
     };
 }
