@@ -5,7 +5,9 @@ public record RemoteFile(
     string FullPath,
     long Size,
     bool IsDirectory,
-    DateTimeOffset LastModified)
+    DateTimeOffset LastModified,
+    string Owner = "N/A",
+    string Permissions = "N/A")
 {
     public bool IsParentEntry => Name == "..";
 }

@@ -7,6 +7,10 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <ApplicationIcon>Assets\sy-ftp.ico</ApplicationIcon>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <!-- 版本信息 -->
+        <Version>1.0.3</Version>
+        <AssemblyVersion>1.0.3</AssemblyVersion>
+        <FileVersion>1.0.3</FileVersion>
         <!-- 裁剪 -->
         <PublishTrimmed>false</PublishTrimmed>
         <!-- 关闭调试符号 -->
@@ -27,7 +31,12 @@
     
     <ItemGroup>
         <Folder Include="Models\" />
-        <AvaloniaResource Include="Assets\**" />
+        <!-- 包含运行时需要的图标文件，排除源文件目录 -->
+        <AvaloniaResource Include="Assets\sy-ftp.ico" />
+        <AvaloniaResource Include="Assets\sy-ftp.icns" />
+        <AvaloniaResource Include="Assets\sy-ftp.png" />
+        <!-- 排除 icons 源文件目录，减少发布包体积 -->
+        <!-- <AvaloniaResource Include="Assets\icons\**" /> -->
     </ItemGroup>
 
     <ItemGroup>

@@ -70,6 +70,28 @@ public static class SettingsService
             catch { }
         }
 
+        // Migrate legacy config.json (hosts) if settings.json doesn't have hosts yet
+        if (loaded.Hosts.Count == 0)
+        {
+            try
+            {
+                var legacyConfigPath = Path.Combine(BaseDir, "config.json");
+                if (File.Exists(legacyConfigPath))
+                {
+                    var json = File.ReadAllText(legacyConfigPath);
+                    var legacyConfig = JsonSerializer.Deserialize<AppConfig>(json,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (legacyConfig is not null)
+                    {
+                        if (legacyConfig.Hosts.Count > 0)
+                            loaded.Hosts = legacyConfig.Hosts;
+                        loaded.WindowTopmost = legacyConfig.WindowTopmost;
+                    }
+                }
+            }
+            catch { }
+        }
+
         // Fill in concrete defaults so the Settings UI never shows blank paths.
         if (string.IsNullOrWhiteSpace(loaded.DefaultDownloadPath))
             loaded.DefaultDownloadPath = SystemDefaultDownloadPath;

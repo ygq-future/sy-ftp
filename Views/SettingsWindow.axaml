@@ -244,7 +244,7 @@
                             Classes.active="{Binding IsGeneralSelected}"
                             Click="OnNavGeneralClick">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <PathIcon Data="{pia:IconGeometry Icon=translate, IconType=regular}"
+                            <PathIcon Data="{pia:IconGeometry Icon=diamonds_four, IconType=regular}"
                                       Width="15" Height="15"
                                       Foreground="{DynamicResource SemiColorText1}" />
                             <TextBlock Text="{l:Tr settings.section.general}"
@@ -274,6 +274,19 @@
                                       Width="15" Height="15"
                                       Foreground="{DynamicResource SemiColorText1}" />
                             <TextBlock Text="{l:Tr settings.section.paths}"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource SemiColorText0}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsAboutSelected}"
+                            Click="OnNavAboutClick">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <PathIcon Data="{pia:IconGeometry Icon=info, IconType=regular}"
+                                      Width="15" Height="15"
+                                      Foreground="{DynamicResource SemiColorText1}" />
+                            <TextBlock Text="{l:Tr settings.section.about}"
                                        FontSize="13"
                                        Foreground="{DynamicResource SemiColorText0}"
                                        VerticalAlignment="Center" />
@@ -314,6 +327,32 @@
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel Spacing="6" Margin="0,8,0,0">
+                                <TextBlock Text="{l:Tr settings.backup}" FontSize="12"
+                                           Foreground="{DynamicResource SemiColorText2}" />
+                                <TextBlock Text="{l:Tr settings.backup.hint}" FontSize="11"
+                                           Foreground="{DynamicResource SemiColorText3}"
+                                           TextWrapping="Wrap" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Command="{Binding ExportBackupCommand}"
+                                            Classes="dialog-btn-outline"
+                                            Background="Transparent"
+                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                            BorderThickness="1"
+                                            Foreground="{DynamicResource SemiColorText1}"
+                                            Content="{l:Tr settings.backup.export}"
+                                            CornerRadius="6" Padding="14,6" />
+                                    <Button Command="{Binding ImportBackupCommand}"
+                                            Classes="dialog-btn-outline"
+                                            Background="Transparent"
+                                            BorderBrush="{DynamicResource SemiColorBorder}"
+                                            BorderThickness="1"
+                                            Foreground="{DynamicResource SemiColorText1}"
+                                            Content="{l:Tr settings.backup.import}"
+                                            CornerRadius="6" Padding="14,6" />
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
 
@@ -473,6 +512,60 @@
                                             Content="{l:Tr settings.path.reset}"
                                             CornerRadius="6" Padding="14,6" />
                                 </Grid>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- About -->
+                        <StackPanel Spacing="18"
+                                    IsVisible="{Binding IsAboutSelected}">
+                            <TextBlock Text="{l:Tr settings.section.about}"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SemiColorText0}" />
+
+                            <StackPanel Spacing="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{l:Tr settings.about.name}" FontSize="12"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <TextBlock Text="{Binding AppName}" FontSize="13"
+                                               Foreground="{DynamicResource SemiColorText0}" />
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{l:Tr settings.about.version}" FontSize="12"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <TextBlock Text="{Binding AppVersion}" FontSize="13"
+                                               Foreground="{DynamicResource SemiColorText0}" />
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{l:Tr settings.about.developer}" FontSize="12"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <TextBlock Text="{Binding Developer}" FontSize="13"
+                                               Foreground="{DynamicResource SemiColorText0}" />
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{l:Tr settings.about.license}" FontSize="12"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <TextBlock Text="{Binding License}" FontSize="13"
+                                               Foreground="{DynamicResource SemiColorText0}" />
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{l:Tr settings.about.github}" FontSize="12"
+                                               Foreground="{DynamicResource SemiColorText2}" />
+                                    <Button Command="{Binding OpenGitHubCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            HorizontalAlignment="Left"
+                                            HorizontalContentAlignment="Left"
+                                            Cursor="Hand">
+                                        <TextBlock Text="{Binding GitHubUrl}" FontSize="13"
+                                                   Foreground="{DynamicResource SemiColorPrimary}"
+                                                   TextDecorations="Underline" />
+                                    </Button>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
 

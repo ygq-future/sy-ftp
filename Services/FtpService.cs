@@ -134,7 +134,9 @@ public class FtpService : IFtpService, IDisposable
                         i.FullName,
                         i.Length,
                         i.IsDirectory,
-                        i.LastWriteTime))
+                        i.LastWriteTime,
+                        $"{i.UserId}:{i.GroupId}",
+                        FormatSftpPermissions(i)))
                     .ToArray();
             }
             else
@@ -147,7 +149,9 @@ public class FtpService : IFtpService, IDisposable
                         i.FullName,
                         i.Size,
                         i.Type == FtpObjectType.Directory,
-                        i.RawModified))
+                        i.RawModified,
+                        FormatFtpOwner(i),
+                        FormatFtpPermissions(i)))
                     .ToArray();
             }
         }, ct);
@@ -303,7 +307,9 @@ public class FtpService : IFtpService, IDisposable
                         i.FullName,
                         i.Size,
                         i.Type == FtpObjectType.Directory,
-                        i.RawModified))
+                        i.RawModified,
+                        FormatFtpOwner(i),
+                        FormatFtpPermissions(i)))
                     .ToArray();
             }
         }, ct);
@@ -329,7 +335,14 @@ public class FtpService : IFtpService, IDisposable
         foreach (var i in items)
         {
             if (i.Name is "." or "..") continue;
-            result.Add(new RemoteFile(i.Name, i.FullName, i.Length, i.IsDirectory, i.LastWriteTime));
+            result.Add(new RemoteFile(
+                i.Name,
+                i.FullName,
+                i.Length,
+                i.IsDirectory,
+                i.LastWriteTime,
+                $"{i.UserId}:{i.GroupId}",
+                FormatSftpPermissions(i)));
             if (i.IsDirectory)
                 SftpRecursiveList(i.FullName, result);
         }
@@ -391,6 +404,81 @@ public class FtpService : IFtpService, IDisposable
             else
                 await _ftpClient!.MoveFile(fromPath, toPath, FtpRemoteExists.Skip, ct);
         }, ct);
+
+    private static string FormatSftpPermissions(Renci.SshNet.Sftp.ISftpFile file)
+    {
+        var perms = new char[9];
+
+        // Owner
+        perms[0] = file.OwnerCanRead ? 'r' : '-';
+        perms[1] = file.OwnerCanWrite ? 'w' : '-';
+        perms[2] = file.OwnerCanExecute ? 'x' : '-';
+
+        // Group
+        perms[3] = file.GroupCanRead ? 'r' : '-';
+        perms[4] = file.GroupCanWrite ? 'w' : '-';
+        perms[5] = file.GroupCanExecute ? 'x' : '-';
+
+        // Others
+        perms[6] = file.OthersCanRead ? 'r' : '-';
+        perms[7] = file.OthersCanWrite ? 'w' : '-';
+        perms[8] = file.OthersCanExecute ? 'x' : '-';
+
+        return new string(perms);
+    }
+
+    private static string FormatFtpOwner(FtpListItem item)
+    {
+        var owner = item.RawOwner ?? "";
+        var group = item.RawGroup ?? "";
+
+        if (string.IsNullOrEmpty(owner) && string.IsNullOrEmpty(group))
+            return "N/A";
+
+        if (string.IsNullOrEmpty(group))
+            return owner;
+
+        if (string.IsNullOrEmpty(owner))
+            return group;
+
+        return $"{owner}:{group}";
+    }
+
+    private static string FormatFtpPermissions(FtpListItem item)
+    {
+        // If RawPermissions is available, use it directly
+        if (!string.IsNullOrEmpty(item.RawPermissions) && item.RawPermissions.Length >= 9)
+        {
+            var raw = item.RawPermissions;
+            // Extract the permission part (skip the first character which is file type)
+            if (raw.Length == 10 && (raw[0] == 'd' || raw[0] == '-' || raw[0] == 'l'))
+                return raw.Substring(1);
+            return raw;
+        }
+
+        // Otherwise, construct from permission enums
+        if (item.Chmod == 0)
+            return "N/A";
+
+        var perms = new char[9];
+
+        // Owner
+        perms[0] = (item.OwnerPermissions & FtpPermission.Read) != 0 ? 'r' : '-';
+        perms[1] = (item.OwnerPermissions & FtpPermission.Write) != 0 ? 'w' : '-';
+        perms[2] = (item.OwnerPermissions & FtpPermission.Execute) != 0 ? 'x' : '-';
+
+        // Group
+        perms[3] = (item.GroupPermissions & FtpPermission.Read) != 0 ? 'r' : '-';
+        perms[4] = (item.GroupPermissions & FtpPermission.Write) != 0 ? 'w' : '-';
+        perms[5] = (item.GroupPermissions & FtpPermission.Execute) != 0 ? 'x' : '-';
+
+        // Others
+        perms[6] = (item.OthersPermissions & FtpPermission.Read) != 0 ? 'r' : '-';
+        perms[7] = (item.OthersPermissions & FtpPermission.Write) != 0 ? 'w' : '-';
+        perms[8] = (item.OthersPermissions & FtpPermission.Execute) != 0 ? 'x' : '-';
+
+        return new string(perms);
+    }
 
     public void Dispose()
     {

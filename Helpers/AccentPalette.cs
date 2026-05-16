@@ -8,8 +8,8 @@ public static class AccentPalette
 {
     public static IReadOnlyList<AccentColorOption> Options { get; } =
     [
+        new("Blue",      "#2296F5"),  // 默认强调色，移到第一位
         new("Indigo",    "#4050B5"),
-        new("Blue",      "#2196F3"),
         new("Sky",       "#0EA5E9"),
         new("Cyan",      "#00BCD4"),
         new("Teal",      "#009688"),

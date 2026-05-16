@@ -44,7 +44,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _isDarkMode;
 
     [ObservableProperty]
-    private string _accentColor = "#4050B5";
+    private string _accentColor = "#2296F5";
 
     /// <summary>Extended palette used by the Settings window.</summary>
     public IReadOnlyList<AccentColorOption> AccentColors => AccentPalette.Options;
@@ -59,7 +59,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _statusText = Loc.Tr("status.disconnected");
 
-        _isDarkMode = Application.Current?.RequestedThemeVariant == ThemeVariant.Dark;
+        _isDarkMode = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
 
         var saved = App.LoadAccentColor();
         _accentColor = saved;

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -30,6 +31,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        // 设置平台特定图标
+        SetPlatformIcon();
 
         // macOS 特定配置
         if (OperatingSystem.IsMacOS())
@@ -622,5 +626,40 @@ public partial class MainWindow : Window
         var files = DragDropHelper.GetDroppedFiles(e).ToList();
         if (files.Count == 0) return;
         await vm.FileBrowser.UploadViaDragDropAsync(files, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 根据当前平台设置窗口图标
+    /// Windows: .ico (多分辨率)
+    /// macOS: .icns (原生格式)
+    /// Linux: .png (通用格式)
+    /// </summary>
+    private void SetPlatformIcon()
+    {
+        try
+        {
+            string iconPath;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                iconPath = "avares://sy-ftp/Assets/sy-ftp.ico";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                iconPath = "avares://sy-ftp/Assets/sy-ftp.icns";
+            }
+            else // Linux 和其他平台
+            {
+                iconPath = "avares://sy-ftp/Assets/sy-ftp.png";
+            }
+
+            var uri = new Uri(iconPath);
+            using var stream = Avalonia.Platform.AssetLoader.Open(uri);
+            Icon = new WindowIcon(stream);
+        }
+        catch
+        {
+            // 图标加载失败时静默处理，使用系统默认图标
+        }
     }
 }
